@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} — ETERNAAURA{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 md:px-8 py-12">
+  <div class="mb-10 text-center max-w-3xl mx-auto">
+    <p class="font-accent text-gold-dark text-lg tracking-widest uppercase">CATEGORY</p>
+    <h1 class="font-serif text-3xl md:text-5xl mt-2 text-ink">{{ category.name }}</h1>
+    {% if category.description %}
+    <p class="text-ink/60 mt-3 leading-relaxed">{{ category.description }}</p>
+    {% endif %}
+  <!-- Filters & Toolbar -->
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 mb-8 border-b border-gold/20">
+    <div class="text-xs sm:text-sm text-ink/70">
+      Showing <strong class="text-ink font-semibold">{{ products|length }}</strong> handcrafted pieces
+    </div>
+
+    {% include "partials/sort_control.html" %}
+  </div>
+
+  {% if products %}
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+    {% for product in products %}
+      {% include "partials/product_card.html" %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-20 bg-white rounded-3xl p-8 shadow-sm border border-black/5 max-w-2xl mx-auto">
+    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-champagne flex items-center justify-center text-gold-dark font-serif text-2xl">✦</div>
+    <h2 class="font-serif text-2xl text-ink mb-2">New Creations Arriving Soon</h2>
+    <p class="text-ink/60 text-sm mb-8 leading-relaxed">
+      Our master artisans are handcrafting new additions for the {{ category.name }} collection. Explore our featured pieces in the meantime.
+    </p>
+    <a href="{% url 'catalog:home' %}" class="inline-block px-8 py-3 bg-ink text-cream rounded-full text-sm font-medium hover:bg-gold hover:text-ink transition-colors">
+      Return to Homepage
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% load static %}
+<!-- Backdrop Blur Overlay -->
+<div x-show="offcanvasOpen"
+     x-transition:enter="transition-opacity ease-linear duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition-opacity ease-linear duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     @click="offcanvasOpen = false"
+     @keydown.escape.window="offcanvasOpen = false"
+     class="fixed inset-0 z-[99] bg-black/75 backdrop-blur-sm"
+     style="display: none;"></div>
+
+<!-- Off-Canvas Sliding Sidebar Navigation Drawer -->
+<aside x-show="offcanvasOpen"
+       x-transition:enter="transition ease-out duration-300 transform"
+       x-transition:enter-start="-translate-x-full"
+       x-transition:enter-end="translate-x-0"
+       x-transition:leave="transition ease-in duration-200 transform"
+       x-transition:leave-start="translate-x-0"
+       x-transition:leave-end="-translate-x-full"
+       @click.away="offcanvasOpen = false"
+       x-data="{ categoryOpen: false }"
+       class="fixed inset-y-0 left-0 z-[100] w-80 max-w-[85vw] bg-ink text-cream border-r border-gold/30 shadow-2xl flex flex-col justify-between overflow-hidden"
+       style="display: none;">
+
+  <!-- Sidebar Header -->
+  <div>
+    <div class="px-6 py-6 border-b border-gold/20 flex items-center justify-between bg-ink/95">
+      <a href="{% url 'catalog:home' %}" @click="offcanvasOpen = false" class="font-serif text-xl sm:text-2xl tracking-[0.2em] text-cream">
+        ETERNA<span class="text-gold-light">AURA</span>
+      </a>
+      <button @click="offcanvasOpen = false" aria-label="Close menu"
+              class="w-8 h-8 rounded-full border border-gold/30 flex items-center justify-center text-cream/70 hover:text-gold-light hover:border-gold hover:bg-white/5 transition-colors cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Navigation Menu Items (Exact Requested Order) -->
+    <nav class="px-4 py-6 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-none font-sans text-sm">
+
+      <!-- 1. Home -->
+      <a href="{% url 'catalog:home' %}" @click="offcanvasOpen = false"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'home' %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <span class="text-gold">✦</span>
+        <span>Home</span>
+      </a>
+
+      <!-- 2. My Profile (Auth Scoped) -->
+      {% if user.is_authenticated %}
+      <a href="{% url 'accounts:profile' %}" @click="offcanvasOpen = false"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'profile' %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gold/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+        <span>My Profile</span>
+      </a>
+      {% else %}
+      <a href="{% url 'accounts:login' %}" @click="offcanvasOpen = false"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl text-cream/80 hover:bg-white/5 hover:text-gold-light transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gold/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+        <span>Sign In / Register</span>
+      </a>
+      {% endif %}
+
+      <!-- 3. Categories (Expandable Accordion dynamically loaded from DB) -->
+      <div class="rounded-xl border border-white/5 overflow-hidden bg-white/[0.02]">
+        <button @click="categoryOpen = !categoryOpen"
+                class="w-full flex items-center justify-between px-4 py-3 text-cream/90 hover:text-gold-light hover:bg-white/5 transition-colors font-medium text-left">
+          <div class="flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gold/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+            <span>Categories</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" :class="categoryOpen ? 'rotate-180 text-gold-light' : 'text-cream/50'"
+               class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+          </svg>
+        </button>
+
+        <!-- Accordion Sub-items -->
+        <div x-show="categoryOpen" x-transition class="bg-black/40 px-3 py-2 space-y-1 border-t border-white/5" style="display: none;">
+          {% for cat in nav_categories %}
+          <div>
+            <a href="{{ cat.get_absolute_url }}" @click="offcanvasOpen = false"
+               class="flex items-center justify-between px-3 py-2 text-xs rounded-lg text-cream/70 hover:text-gold-light hover:bg-white/5 transition-colors">
+              <span>{{ cat.name }}</span>
+              <span class="text-[10px] text-gold/60 uppercase">Explore</span>
+            </a>
+
+            <!-- Nested child categories support -->
+            {% if cat.children.all %}
+            <div class="pl-4 space-y-1 border-l border-gold/20 my-1 ml-2">
+              {% for child in cat.children.all %}
+              {% if child.is_active %}
+              <a href="{{ child.get_absolute_url }}" @click="offcanvasOpen = false"
+                 class="block px-2 py-1 text-[11px] text-cream/60 hover:text-gold-light transition-colors">
+                • {{ child.name }}
+              </a>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <div class="px-3 py-2 text-xs text-cream/40 italic">Loading fine jewellery categories...</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- 4. New Arrivals -->
+      <a href="{% url 'catalog:new_arrivals' %}" @click="offcanvasOpen = false"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if 'new-arrivals' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <span class="text-gold/80">✦</span>
+        <span>New Arrivals</span>
+      </a>
+
+      <!-- 5. Best Sellers -->
+      <a href="{% url 'catalog:best_sellers' %}" @click="offcanvasOpen = false"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if 'best-sellers' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <span class="text-gold/80">✦</span>
+        <span>Best Sellers</span>
+      </a>
+
+      <!-- 6. Trending Collections -->
+      <a href="{% url 'catalog:trending' %}" @click="offcanvasOpen = false"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if 'trending-collections' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <span class="text-gold/80">✦</span>
+        <span>Trending Collections</span>
+      </a>
+
+
+      <!-- 7. Coupon Codes -->
+      <a href="{% url 'coupons:list' %}" @click="offcanvasOpen = false"
+         class="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 {% if 'coupons' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <div class="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-12h5.25c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125H7.5M7.5 12h5.25c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125H7.5m0-9A2.25 2.25 0 0 0 5.25 6h-1.5A2.25 2.25 0 0 0 1.5 8.25v7.5A2.25 2.25 0 0 0 3.75 18h1.5a2.25 2.25 0 0 0 2.25-2.25V6.75Z"/></svg>
+          <span>Coupon Codes</span>
+        </div>
+        <span class="text-[10px] bg-gold text-ink font-bold px-2 py-0.5 rounded-full uppercase">Offers</span>
+      </a>
+
+      <!-- 8. Shopping Cart -->
+      <a href="{% url 'cart:detail' %}" @click="offcanvasOpen = false"
+         class="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 {% if 'cart' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <div class="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gold/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.694 2.602-7.163a1.125 1.125 0 0 0-1.11-1.337H5.106M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+          <span>Shopping Cart</span>
+        </div>
+        <span data-cart-count-badge class="{% if not cart_item_count %}hidden{% endif %} text-[10px] bg-gold text-ink font-bold px-2 py-0.5 rounded-full">{{ cart_item_count|default:0 }}</span>
+      </a>
+
+      <!-- 9. My Orders (Auth Scoped) -->
+      {% if user.is_authenticated %}
+      <a href="{% url 'orders:history' %}" @click="offcanvasOpen = false"
+         class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if 'orders' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gold/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.25 6a2.25 2.25 0 1 1 4.5 0v4.5h-4.5V6Z"/></svg>
+        <span>My Orders</span>
+      </a>
+      {% endif %}
+
+      <!-- 10. My Wishlist -->
+      <a href="{% url 'accounts:wishlist' %}" @click="offcanvasOpen = false"
+         class="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 {% if 'wishlist' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
+        <div class="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gold/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+          <span>My Wishlist</span>
+        </div>
+        {% if user.is_authenticated %}
+        <span data-wishlist-count-badge class="{% if not wishlist_count %}hidden{% endif %} text-[10px] bg-gold text-ink font-bold px-2 py-0.5 rounded-full">{{ wishlist_count|default:0 }}</span>
+        {% endif %}
+      </a>
+
+      <!-- 11. Logout / Sign In (Separate Row below divider) -->
+      <div class="pt-2 my-1 border-t border-white/10">
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors font-medium text-left cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
+            <span>Logout</span>
+          </button>
+        </form>
+        {% else %}
+        <a href="{% url 'accounts:login' %}" @click="offcanvasOpen = false"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl text-gold-light hover:bg-gold hover:text-ink transition-all duration-200 font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9"/></svg>
+          <span>Sign In</span>
+        </a>
+        {% endif %}
+      </div>
+
+
+    </nav>
+  </div>
+
+  <!-- Sidebar Footer -->
+  <div class="p-6 border-t border-gold/20 bg-ink/95 text-xs text-cream/50">
+    <div class="flex items-center justify-between mb-2">
+      <span class="font-serif text-gold-light">ETERNAAURA</span>
+      <span class="text-[10px] text-gold-dark uppercase tracking-widest">Fine Jewellery</span>
+    </div>
+    <p class="leading-relaxed text-cream/40">Timeless craftsmanship &amp; certified purity.</p>
+  </div>
+
+</aside>

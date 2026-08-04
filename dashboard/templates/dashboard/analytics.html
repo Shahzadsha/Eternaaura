@@ -1,0 +1,287 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Daily Revenue Analysis{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-panel border border-white/10 rounded-xl p-5 shadow-sm">
+      <p class="text-xs uppercase tracking-wider text-gray-400 font-medium">Total Confirmed Orders</p>
+      <p class="text-3xl font-serif text-gold-light mt-2">{{ total_confirmed_orders }}</p>
+    </div>
+    <div class="bg-panel border border-white/10 rounded-xl p-5 shadow-sm">
+      <p class="text-xs uppercase tracking-wider text-gray-400 font-medium">Lifetime Revenue</p>
+      <p class="text-3xl font-serif text-gold-light mt-2">₹{{ total_lifetime_revenue|floatformat:2 }}</p>
+    </div>
+    <div class="bg-panel border border-white/10 rounded-xl p-5 shadow-sm">
+      <p class="text-xs uppercase tracking-wider text-gray-400 font-medium">Selected Range Average</p>
+      <p class="text-3xl font-serif text-emerald-400 mt-2" id="cardAvgRevenue">₹0.00</p>
+    </div>
+    <div class="bg-panel border border-white/10 rounded-xl p-5 shadow-sm">
+      <p class="text-xs uppercase tracking-wider text-gray-400 font-medium">Selected Range Total</p>
+      <p class="text-3xl font-serif text-gold-light mt-2" id="cardTotalRevenue">₹0.00</p>
+    </div>
+  </div>
+
+  <!-- Daily Revenue Analysis Section -->
+  <div class="bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gold/15 text-gold-light flex items-center justify-center font-serif text-xl font-bold">📊</div>
+          <div>
+            <h2 class="font-serif text-xl text-white font-semibold">Daily Revenue Analysis</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Histogram of daily revenue earned with horizontal mean average revenue line overlay</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <label for="timeRangeSelect" class="text-xs text-gray-400 font-medium">Time Horizon:</label>
+        <select id="timeRangeSelect" class="bg-panel2 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-gold">
+          <option value="7">Last 7 Days</option>
+          <option value="14" selected>Last 14 Days</option>
+          <option value="30">Last 30 Days</option>
+          <option value="60">Last 60 Days</option>
+        </select>
+        <button id="refreshChartBtn" class="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-gold-light hover:bg-white/10 transition text-xs flex items-center gap-1">
+          🔄 <span class="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chart / Empty State Container -->
+    <div class="relative min-h-[340px] flex items-center justify-center">
+      <!-- Loading Spinner -->
+      <div id="chartSpinner" class="absolute inset-0 bg-panel/80 flex flex-col items-center justify-center z-10">
+        <div class="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mb-2"></div>
+        <p class="text-xs text-gray-400">Loading daily revenue metrics...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden w-full py-16 text-center border border-dashed border-white/10 rounded-xl bg-panel2/40 p-8">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-gold/10 flex items-center justify-center text-gold-light text-2xl font-serif">📈</div>
+        <h3 class="font-serif text-lg text-white mb-1">No Revenue Data Recorded</h3>
+        <p class="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+          There are no confirmed or completed orders within the selected timeframe. Daily histogram bars and the horizontal mean average line will render automatically when orders are placed.
+        </p>
+      </div>
+
+      <!-- Canvas -->
+      <div id="chartWrapper" class="w-full h-80">
+        <canvas id="revenueHistogramChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Legend & Indicator Footer -->
+    <div class="mt-6 pt-4 border-t border-white/5 flex flex-wrap items-center justify-between gap-4 text-xs text-gray-400">
+      <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2">
+          <span class="w-3.5 h-3.5 rounded bg-gold/80 border border-gold inline-block"></span>
+          <span>Daily Revenue (₹)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-5 h-0.5 bg-amber-200 border-t-2 border-dashed border-amber-300 inline-block"></span>
+          <span class="font-medium text-amber-200">Average Daily Revenue (₹)</span>
+        </div>
+      </div>
+
+      <div class="text-[11px] text-gray-500">
+        Updates in real-time · Auto-refreshes every 30 seconds
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const canvas = document.getElementById('revenueHistogramChart');
+  const ctx = canvas.getContext('2d');
+  const spinner = document.getElementById('chartSpinner');
+  const emptyState = document.getElementById('emptyState');
+  const chartWrapper = document.getElementById('chartWrapper');
+  const rangeSelect = document.getElementById('timeRangeSelect');
+  const refreshBtn = document.getElementById('refreshChartBtn');
+
+  const cardAvg = document.getElementById('cardAvgRevenue');
+  const cardTotal = document.getElementById('cardTotalRevenue');
+
+  let revenueChart = null;
+
+  function fetchRevenueData() {
+    spinner.classList.remove('hidden');
+    const days = rangeSelect.value || 14;
+
+    fetch(`{% url 'dashboard:revenue_analytics_api' %}?days=${days}`)
+      .then(res => res.json())
+      .then(data => {
+        spinner.classList.add('hidden');
+
+        // Update cards
+        cardAvg.textContent = `₹${data.average_daily_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        cardTotal.textContent = `₹${data.total_period_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+        if (!data.has_data) {
+          emptyState.classList.remove('hidden');
+          chartWrapper.classList.add('hidden');
+          if (revenueChart) revenueChart.destroy();
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        chartWrapper.classList.remove('hidden');
+
+        renderChart(data);
+      })
+      .catch(err => {
+        spinner.classList.add('hidden');
+        console.error('Error fetching revenue metrics:', err);
+      });
+  }
+
+  function renderChart(data) {
+    if (revenueChart) {
+      revenueChart.destroy();
+    }
+
+    const goldGradient = ctx.createLinearGradient(0, 0, 0, 300);
+    goldGradient.addColorStop(0, 'rgba(201, 164, 83, 0.9)');
+    goldGradient.addColorStop(1, 'rgba(201, 164, 83, 0.25)');
+
+    revenueChart = new Chart(ctx, {
+      data: {
+        labels: data.labels,
+        datasets: [
+          // Histogram Bar Dataset
+          {
+            type: 'bar',
+            label: 'Daily Revenue',
+            data: data.revenues,
+            backgroundColor: goldGradient,
+            borderColor: '#c9a453',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            hoverBackgroundColor: '#e3cc8c',
+            order: 2,
+          },
+          // Horizontal Mean (Average) Revenue Line Dataset
+          {
+            type: 'line',
+            label: 'Average Daily Revenue',
+            data: data.average_line,
+            borderColor: '#fbbf24', // Distinct amber/gold line
+            borderWidth: 2.5,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHoverBackgroundColor: '#fbbf24',
+            fill: false,
+            tension: 0,
+            order: 1,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            display: false, // Custom legend below chart
+          },
+          tooltip: {
+            backgroundColor: '#1b1b1e',
+            titleColor: '#e3cc8c',
+            bodyColor: '#ffffff',
+            borderColor: 'rgba(201, 164, 83, 0.3)',
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            usePointStyle: true,
+            callbacks: {
+              title: function(items) {
+                const idx = items[0].dataIndex;
+                const fullDate = data.date_strings ? data.date_strings[idx] : items[0].label;
+                return `Date: ${items[0].label} (${fullDate})`;
+              },
+              label: function(context) {
+                const val = context.parsed.y;
+                const avg = data.average_daily_revenue;
+
+                if (context.dataset.type === 'line') {
+                  return ` Average Daily Revenue: ₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                }
+
+                const diff = val - avg;
+                const diffPct = avg > 0 ? ((diff / avg) * 100).toFixed(1) : '0';
+                const compStr = diff >= 0
+                  ? `+₹${diff.toLocaleString('en-IN', {minimumFractionDigits: 2})} (+${diffPct}% vs avg)`
+                  : `-₹${Math.abs(diff).toLocaleString('en-IN', {minimumFractionDigits: 2})} (${diffPct}% vs avg)`;
+
+                return [
+                  ` Daily Revenue: ₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}`,
+                  ` Performance: ${compStr}`
+                ];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)',
+              drawBorder: false,
+            },
+            ticks: {
+              color: '#9ca3af',
+              font: {
+                family: 'Inter',
+                size: 11
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.08)',
+              drawBorder: false,
+            },
+            ticks: {
+              color: '#9ca3af',
+              font: {
+                family: 'Inter',
+                size: 11
+              },
+              callback: function(value) {
+                if (value >= 100000) return '₹' + (value / 100000).toFixed(1) + 'L';
+                if (value >= 1000) return '₹' + (value / 1000).toFixed(0) + 'k';
+                return '₹' + value;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Event Listeners
+  rangeSelect.addEventListener('change', fetchRevenueData);
+  refreshBtn.addEventListener('click', fetchRevenueData);
+
+  // Initial Load
+  fetchRevenueData();
+
+  // Real-time Auto-Refresh every 30 seconds
+  setInterval(fetchRevenueData, 30000);
+});
+</script>
+{% endblock %}

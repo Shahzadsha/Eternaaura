@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-20">
+  <h1 class="font-serif text-3xl mb-8 text-center">Create Your Account</h1>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="w-full bg-ink text-cream py-3 rounded-full font-medium hover:bg-gold hover:text-ink transition-colors">Register</button>
+  </form>
+  <p class="text-center text-sm mt-6">Already have an account? <a href="{% url 'accounts:login' %}" class="text-gold-dark hover:underline">Sign in</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 md:px-8 py-16">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-serif text-3xl md:text-4xl text-ink">My Account</h1>
+      <p class="text-ink/60 text-sm mt-1">Manage your profile, delivery addresses, and orders.</p>
+    </div>
+    <a href="{% url 'accounts:profile_edit' %}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-ink text-cream rounded-full text-sm font-medium hover:bg-gold hover:text-ink transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+      Edit Profile
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Profile & Information Card -->
+    <a href="{% url 'accounts:profile_edit' %}" class="bg-white rounded-2xl shadow-sm hover:shadow-md p-6 border border-black/5 transition-all group flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="p-2.5 rounded-xl bg-gold/10 text-gold-dark">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          </span>
+          <span class="text-xs text-gold-dark font-medium group-hover:translate-x-1 transition-transform">Edit Profile &rarr;</span>
+        </div>
+        <h2 class="font-serif text-lg font-semibold text-ink mb-1">Personal Details</h2>
+        <p class="text-ink/80 text-sm font-medium">{{ user.get_full_name|default:user.username }}</p>
+        <p class="text-ink/60 text-xs mt-0.5">{{ user.email }}</p>
+        {% if user.phone_number %}
+        <p class="text-ink/50 text-xs mt-1">{{ user.phone_number }}</p>
+        {% endif %}
+      </div>
+    </a>
+
+    <!-- Saved Addresses Card -->
+    <a href="{% url 'accounts:addresses' %}" class="bg-white rounded-2xl shadow-sm hover:shadow-md p-6 border border-black/5 transition-all group flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="p-2.5 rounded-xl bg-gold/10 text-gold-dark">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </span>
+          <span class="text-xs text-gold-dark font-medium group-hover:translate-x-1 transition-transform">Manage &rarr;</span>
+        </div>
+        <h2 class="font-serif text-lg font-semibold text-ink mb-1">Saved Addresses</h2>
+        <p class="text-ink/60 text-sm">Add, edit, or set default delivery addresses for faster checkout.</p>
+      </div>
+    </a>
+
+    <!-- Order History Card -->
+    <a href="{% url 'orders:history' %}" class="bg-white rounded-2xl shadow-sm hover:shadow-md p-6 border border-black/5 transition-all group flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="p-2.5 rounded-xl bg-gold/10 text-gold-dark">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          </span>
+          <span class="text-xs text-gold-dark font-medium group-hover:translate-x-1 transition-transform">View Orders &rarr;</span>
+        </div>
+        <h2 class="font-serif text-lg font-semibold text-ink mb-1">Order History</h2>
+        <p class="text-ink/60 text-sm">Track active orders, view past purchases, and initiate returns.</p>
+      </div>
+    </a>
+
+    <!-- Sign Out Card -->
+    <form method="post" action="{% url 'accounts:logout' %}" class="bg-white rounded-2xl shadow-sm hover:shadow-md p-6 border border-red-100 transition-all flex flex-col justify-between">
+      {% csrf_token %}
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="p-2.5 rounded-xl bg-red-50 text-red-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </span>
+        </div>
+        <h2 class="font-serif text-lg font-semibold text-red-600 mb-1">Sign Out</h2>
+        <p class="text-ink/60 text-sm">Securely log out of your ETERNAAURA account on this device.</p>
+      </div>
+      <button type="submit" class="mt-4 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-medium text-xs rounded-xl transition-colors w-full text-center cursor-pointer">
+        Logout Now →
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

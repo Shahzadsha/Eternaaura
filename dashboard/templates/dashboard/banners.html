@@ -1,0 +1,28 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Homepage Banners{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+  <p class="text-sm text-gray-500">{{ banners.count }} banners</p>
+  <a href="{% url 'dashboard:banner_create' %}" class="text-xs bg-gold text-ink font-semibold px-4 py-2 rounded-lg hover:bg-gold-light transition">+ Add Banner</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+  {% for b in banners %}
+  <div class="bg-panel border border-white/10 rounded-xl overflow-hidden">
+    {% if b.image %}<img src="{{ b.image.url }}" class="w-full h-40 object-cover">{% endif %}
+    <div class="p-4">
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="font-serif text-white">{{ b.title }}</h3>
+        {% if b.is_active %}<span class="text-emerald-400 text-xs">Active</span>{% else %}<span class="text-gray-500 text-xs">Inactive</span>{% endif %}
+      </div>
+      <p class="text-sm text-gray-400 mb-4">{{ b.subtitle }}</p>
+      <div class="space-x-3">
+        <a href="{% url 'dashboard:banner_edit' b.pk %}" class="text-gold-light hover:underline text-xs">Edit</a>
+        <a href="{% url 'dashboard:banner_delete' b.pk %}" class="text-red-400 hover:underline text-xs">Delete</a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <p class="text-gray-500 col-span-2 text-center py-8">No banners yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

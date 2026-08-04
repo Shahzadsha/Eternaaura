@@ -1,0 +1,67 @@
+/* ==========================================================================
+   ETERNAAURA — Core Luxury Stylesheet & Custom Utilities
+   ========================================================================== */
+
+/* Custom Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for Luxury Aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0b0c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8a6f28;
+  border-radius: 9999px;
+  border: 2px solid #0b0b0c;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b7973f;
+}
+
+/* Selection Color */
+::selection {
+  background: #b7973f;
+  color: #0b0b0c;
+}
+
+/* Luxury Gold Text Gradient */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #d9c07f 0%, #b7973f 50%, #8a6f28 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Luxury Card Elevate Animation */
+.luxury-card-hover {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.15);
+}
+
+/* Product Zoom Helper */
+.cursor-zoom-in {
+  cursor: zoom-in;
+}
+
+/* Utility to hide scrollbars while keeping scroll functionality */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

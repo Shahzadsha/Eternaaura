@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 md:px-8 py-12">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="font-serif text-3xl md:text-4xl">Saved Addresses</h1>
+    <a href="{% url 'accounts:address_add' %}" class="px-5 py-2.5 bg-ink text-cream rounded-full text-sm font-medium hover:bg-gold hover:text-ink transition-colors">
+      + Add New Address
+    </a>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    {% for address in addresses %}
+    <div class="bg-white rounded-2xl shadow-sm p-6 border border-black/5 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <p class="font-serif font-semibold text-lg text-ink">{{ address.full_name }}</p>
+          {% if address.is_default %}
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gold/15 text-gold-dark uppercase tracking-wider">Default</span>
+          {% endif %}
+        </div>
+        <p class="text-sm text-ink/70">{{ address.line1 }}{% if address.line2 %}, {{ address.line2 }}{% endif %}</p>
+        <p class="text-sm text-ink/70">{{ address.city }}, {{ address.state }} - {{ address.postal_code }}</p>
+        <p class="text-xs text-ink/50 mt-2">Phone: {{ address.phone_number }}</p>
+      </div>
+
+      <div class="border-t border-ink/10 pt-3 mt-4 text-right">
+        <form method="post" action="{% url 'accounts:address_delete' address.id %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" onclick="return confirm('Remove this address?')" class="text-xs text-red-600 hover:underline">
+            Remove Address
+          </button>
+        </form>
+      </div>
+    </div>
+    {% empty %}
+    <div class="md:col-span-2 text-center py-12 bg-white rounded-2xl p-8">
+      <p class="text-ink/60 mb-4">You have no saved delivery addresses.</p>
+      <a href="{% url 'accounts:address_add' %}" class="inline-block px-6 py-2.5 bg-ink text-cream rounded-full text-sm font-medium hover:bg-gold hover:text-ink transition-colors">
+        Add Your First Address
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Coupon Codes — ETERNAAURA{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 md:px-8 py-12 sm:py-16">
+  <!-- Breadcrumb -->
+  <nav class="flex items-center space-x-2 text-xs text-ink/50 mb-8">
+    <a href="{% url 'catalog:home' %}" class="hover:text-gold transition-colors">Home</a>
+    <span>/</span>
+    <span class="text-ink font-medium">Coupon Codes</span>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="text-center max-w-2xl mx-auto mb-12">
+    <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl text-ink font-medium">Coupon Codes</h1>
+    <p class="text-ink/60 text-sm sm:text-base mt-3">Available offers and discount codes will appear here soon.</p>
+  </div>
+
+  <!-- Centered Placeholder Card -->
+  <div class="max-w-md mx-auto text-center py-16 px-6 bg-white rounded-3xl shadow-sm border border-black/5">
+    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-champagne/60 border border-gold/20 flex items-center justify-center text-gold-dark text-2xl font-serif">
+      🎁
+    </div>
+    <h2 class="font-serif text-xl sm:text-2xl text-ink font-semibold mb-2">No coupons available at the moment.</h2>
+    <p class="text-ink/60 text-xs sm:text-sm mb-6">Check back soon for upcoming bridal sales, seasonal discounts, and VIP member offers.</p>
+    <a href="{% url 'catalog:home' %}" class="inline-block px-6 py-2.5 bg-ink text-cream rounded-full text-xs sm:text-sm font-medium hover:bg-gold hover:text-ink transition-colors">
+      Return to Storefront
+    </a>
+  </div>
+</div>
+{% endblock %}

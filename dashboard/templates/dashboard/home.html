@@ -1,0 +1,239 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Overview{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Metric Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
+    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Total Products</p>
+    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">{{ total_products }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
+    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Orders Today</p>
+    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">{{ orders_today }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
+    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Revenue Today</p>
+    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">₹{{ revenue_today|floatformat:2 }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
+    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Low Stock Items</p>
+    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">{{ low_stock_products.count }}</p>
+  </div>
+</div>
+
+
+<!-- Daily Revenue Analysis Section -->
+<div class="bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl mb-8">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gold/15 text-gold-light flex items-center justify-center font-serif text-xl font-bold">📊</div>
+      <div>
+        <h2 class="font-serif text-xl text-white font-semibold">Daily Revenue Analysis</h2>
+        <p class="text-xs text-gray-400 mt-0.5">Histogram of daily revenue earned with horizontal mean average revenue line overlay</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <label for="overviewRangeSelect" class="text-xs text-gray-400 font-medium">Period:</label>
+      <select id="overviewRangeSelect" class="bg-panel2 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-gold">
+        <option value="7">Last 7 Days</option>
+        <option value="14" selected>Last 14 Days</option>
+        <option value="30">Last 30 Days</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="relative min-h-[300px] flex items-center justify-center">
+    <div id="overviewSpinner" class="absolute inset-0 bg-panel/80 flex flex-col items-center justify-center z-10">
+      <div class="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mb-2"></div>
+      <p class="text-xs text-gray-400">Loading daily revenue metrics...</p>
+    </div>
+
+    <div id="overviewEmptyState" class="hidden w-full py-12 text-center border border-dashed border-white/10 rounded-xl bg-panel2/40 p-6">
+      <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gold/10 flex items-center justify-center text-gold-light text-xl font-serif">📈</div>
+      <p class="font-serif text-base text-white mb-1">No Revenue Recorded Yet</p>
+      <p class="text-xs text-gray-400 max-w-sm mx-auto">Revenue bars and average line will render automatically when confirmed orders are placed.</p>
+    </div>
+
+    <div id="overviewChartWrapper" class="w-full h-72">
+      <canvas id="overviewRevenueChart"></canvas>
+    </div>
+  </div>
+
+  <div class="mt-4 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-4 text-xs text-gray-400">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <span class="w-3.5 h-3.5 rounded bg-gold/80 border border-gold inline-block"></span>
+        <span>Daily Revenue (₹)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-5 h-0.5 bg-amber-200 border-t-2 border-dashed border-amber-300 inline-block"></span>
+        <span class="font-medium text-amber-200">Average Daily Revenue (₹)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-panel border border-white/10 rounded-xl p-6">
+    <h2 class="font-serif text-white mb-4">Orders by Status</h2>
+    <ul class="space-y-2 text-sm">
+      {% for row in orders_by_status %}
+        <li class="flex justify-between border-b border-white/5 pb-2">
+          <span class="capitalize text-gray-300">{{ row.status }}</span>
+          <span class="text-gold-light">{{ row.count }}</span>
+        </li>
+      {% empty %}
+        <li class="text-gray-500">No orders yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-6">
+    <h2 class="font-serif text-white mb-4">Low Stock Alerts</h2>
+    <ul class="space-y-2 text-sm">
+      {% for p in low_stock_products %}
+        <li class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-gray-300">{{ p.name }}</span>
+          <span class="text-red-400">{{ p.stock_quantity }} left</span>
+        </li>
+      {% empty %}
+        <li class="text-gray-500">Stock levels healthy.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const canvas = document.getElementById('overviewRevenueChart');
+  const ctx = canvas.getContext('2d');
+  const spinner = document.getElementById('overviewSpinner');
+  const emptyState = document.getElementById('overviewEmptyState');
+  const chartWrapper = document.getElementById('overviewChartWrapper');
+  const rangeSelect = document.getElementById('overviewRangeSelect');
+
+  let overviewChart = null;
+
+  function loadRevenueData() {
+    spinner.classList.remove('hidden');
+    const days = rangeSelect.value || 14;
+
+    fetch(`{% url 'dashboard:revenue_analytics_api' %}?days=${days}`)
+      .then(res => res.json())
+      .then(data => {
+        spinner.classList.add('hidden');
+
+        if (!data.has_data) {
+          emptyState.classList.remove('hidden');
+          chartWrapper.classList.add('hidden');
+          if (overviewChart) overviewChart.destroy();
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        chartWrapper.classList.remove('hidden');
+
+        if (overviewChart) overviewChart.destroy();
+
+        const goldGradient = ctx.createLinearGradient(0, 0, 0, 260);
+        goldGradient.addColorStop(0, 'rgba(201, 164, 83, 0.9)');
+        goldGradient.addColorStop(1, 'rgba(201, 164, 83, 0.25)');
+
+        overviewChart = new Chart(ctx, {
+          data: {
+            labels: data.labels,
+            datasets: [
+              {
+                type: 'bar',
+                label: 'Daily Revenue',
+                data: data.revenues,
+                backgroundColor: goldGradient,
+                borderColor: '#c9a453',
+                borderWidth: 1.5,
+                borderRadius: 5,
+                hoverBackgroundColor: '#e3cc8c',
+                order: 2,
+              },
+              {
+                type: 'line',
+                label: 'Average Daily Revenue',
+                data: data.average_line,
+                borderColor: '#fbbf24',
+                borderWidth: 2.5,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                fill: false,
+                order: 1,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1b1b1e',
+                titleColor: '#e3cc8c',
+                bodyColor: '#ffffff',
+                borderColor: 'rgba(201, 164, 83, 0.3)',
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {
+                  label: function(context) {
+                    const val = context.parsed.y;
+                    const avg = data.average_daily_revenue;
+                    if (context.dataset.type === 'line') {
+                      return ` Average Daily Revenue: ₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                    }
+                    const diff = val - avg;
+                    const diffPct = avg > 0 ? ((diff / avg) * 100).toFixed(1) : '0';
+                    const compStr = diff >= 0 ? `+${diffPct}% vs avg` : `${diffPct}% vs avg`;
+                    return [
+                      ` Daily Revenue: ₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}`,
+                      ` Comparison: ${compStr}`
+                    ];
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                ticks: { color: '#9ca3af', font: { family: 'Inter', size: 10 } }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.08)', drawBorder: false },
+                ticks: {
+                  color: '#9ca3af',
+                  font: { family: 'Inter', size: 10 },
+                  callback: function(v) {
+                    if (v >= 1000) return '₹' + (v / 1000).toFixed(0) + 'k';
+                    return '₹' + v;
+                  }
+                }
+              }
+            }
+          }
+        });
+      })
+      .catch(err => {
+        spinner.classList.add('hidden');
+        console.error(err);
+      });
+  }
+
+  rangeSelect.addEventListener('change', loadRevenueData);
+  loadRevenueData();
+  setInterval(loadRevenueData, 30000);
+});
+</script>
+{% endblock %}

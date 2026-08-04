@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}ETERNAAURA — Timeless Luxury Jewellery{% endblock %}</title>
+<meta name="description" content="{% block meta_description %}ETERNAAURA — premium gold, diamond and bridal jewellery, crafted for a lifetime.{% endblock %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#0b0b0c',
+          cream: '#f8f4ec',
+          champagne: '#efe6d3',
+          gold: { DEFAULT: '#b7973f', light: '#d9c07f', dark: '#8a6f28' },
+        },
+        fontFamily: {
+          serif: ['"Playfair Display"', 'serif'],
+          accent: ['"Cormorant Garamond"', 'serif'],
+          sans: ['Inter', 'sans-serif'],
+        },
+      },
+    },
+  }
+</script>
+<!-- Swiper CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<link rel="stylesheet" href="{% load static %}{% static 'css/site.css' %}">
+<style>
+  /* Luxury Swiper Custom Styling */
+  .swiper-slide {
+    height: auto !important;
+  }
+  .swiper-slide > div {
+    height: 100%;
+  }
+  .swiper-pagination-bullet {
+    background: #b7973f !important;
+    opacity: 0.35;
+    transition: all 0.3s ease;
+    width: 8px;
+    height: 8px;
+  }
+  .swiper-pagination-bullet-active {
+    opacity: 1 !important;
+    width: 24px !important;
+    border-radius: 9999px !important;
+    background: #8a6f28 !important;
+  }
+  .carousel-nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    border: 1px solid rgba(11, 11, 12, 0.15);
+    background: rgba(255, 255, 255, 0.9);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #0b0b0c;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    user-select: none;
+  }
+  .carousel-nav-btn:hover:not(.swiper-button-disabled) {
+    background-color: #b7973f;
+    border-color: #b7973f;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(183, 151, 63, 0.3);
+  }
+  .carousel-nav-btn:active:not(.swiper-button-disabled) {
+    transform: translateY(0);
+  }
+  .carousel-nav-btn.swiper-button-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  /* Prevent horizontal scroll clipping for elevated cards */
+  .swiper-luxury-padding {
+    padding: 12px 6px 24px 6px !important;
+    margin-left: -6px !important;
+    margin-right: -6px !important;
+  }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body class="bg-cream text-ink font-sans antialiased" x-data="{ offcanvasOpen: false, searchOpen: false }">
+
+{% include "partials/offcanvas_sidebar.html" %}
+{% include "partials/navbar.html" %}
+
+
+
+<main>
+  {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 pt-4 space-y-2">
+      {% for message in messages %}
+        <div class="rounded-lg px-4 py-3 text-sm bg-ink text-cream">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+{% include "partials/footer.html" %}
+
+<!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="{% static 'js/site.js' %}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

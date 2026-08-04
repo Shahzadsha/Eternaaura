@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 md:px-8 py-8 sm:py-12">
+  <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl mb-6 sm:mb-8">Checkout</h1>
+
+  <form method="post" action="{% url 'orders:checkout' %}">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+      
+      <!-- Delivery Address Selection -->
+      <div class="md:col-span-2 space-y-6">
+
+        {% if addresses %}
+        <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 border border-black/5">
+          <h2 class="font-serif text-lg sm:text-xl mb-4">Select Shipping Address</h2>
+          <div class="space-y-3">
+            {% for addr in addresses %}
+            <label class="flex items-start gap-3 p-3.5 sm:p-4 border border-ink/10 rounded-xl cursor-pointer hover:border-gold transition-colors">
+              <input type="radio" name="address_id" value="{{ addr.id }}" {% if addr.is_default or forloop.first %}checked{% endif %} class="mt-1 accent-gold shrink-0">
+              <div class="min-w-0">
+                <p class="font-medium text-ink text-sm sm:text-base">{{ addr.full_name }} <span class="text-xs text-ink/40 uppercase">({{ addr.address_type }})</span></p>
+                <p class="text-xs sm:text-sm text-ink/70 mt-0.5">{{ addr.line1 }}{% if addr.line2 %}, {{ addr.line2 }}{% endif %}</p>
+                <p class="text-xs sm:text-sm text-ink/70">{{ addr.city }}, {{ addr.state }} - {{ addr.postal_code }}</p>
+                <p class="text-xs text-ink/50 mt-1">Phone: {{ addr.phone_number }}</p>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- New Address Form (used if no address selected) -->
+        <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 border border-black/5">
+          <h2 class="font-serif text-lg sm:text-xl mb-4">{% if addresses %}Or Add a New Address{% else %}Shipping Address{% endif %}</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Full Name</label>
+              <input type="text" name="full_name" placeholder="John Doe" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Phone Number</label>
+              <input type="text" name="phone_number" placeholder="+91 9876543210" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Line 1</label>
+              <input type="text" name="line1" placeholder="Street Address, House/Flat No." class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Line 2 (Optional)</label>
+              <input type="text" name="line2" placeholder="Apartment, suite, landmark" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">City</label>
+              <input type="text" name="city" placeholder="Mumbai" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">State</label>
+              <input type="text" name="state" placeholder="Maharashtra" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+            </div>
+            <div class="sm:col-span-2 sm:w-1/2">
+              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Pincode / Postal Code</label>
+              <input type="text" name="postal_code" placeholder="400001" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Code Payment Section -->
+        <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-8 border border-black/5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 rounded-full bg-gold/15 text-gold-dark flex items-center justify-center font-serif text-lg font-bold shrink-0">📲</div>
+            <div>
+              <h2 class="font-serif text-lg sm:text-xl text-ink">Scan &amp; Pay</h2>
+              <p class="text-xs text-ink/60">UPI Instant Payment</p>
+            </div>
+          </div>
+
+          <p class="text-xs sm:text-sm text-ink/70 mb-6 leading-relaxed">
+            Scan this QR code using any UPI app (Google Pay, PhonePe, Paytm, BHIM, etc.) to complete your payment.
+          </p>
+
+          <!-- QR Code Image Container -->
+          <div class="flex flex-col items-center justify-center p-4 sm:p-6 bg-cream/40 rounded-2xl border border-gold/30 mb-6 shadow-inner">
+            <div class="p-3 bg-white rounded-xl shadow-md border border-gold/20 mb-3 max-w-[200px] sm:max-w-[240px] aspect-square w-full">
+              <img src="{% static 'images/upi_qr.png' %}" alt="Scan & Pay UPI QR Code" class="w-full h-full object-contain rounded-lg">
+            </div>
+            <div class="flex flex-wrap justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-gold-dark font-medium uppercase tracking-wider text-center">
+              <span>✦ Google Pay</span> • <span>PhonePe</span> • <span>Paytm</span> • <span>BHIM ✦</span>
+            </div>
+          </div>
+
+          <!-- Confirmation Checkbox -->
+          <div class="p-3.5 sm:p-4 bg-gold/5 rounded-xl border border-gold/30">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" id="payment_completed" name="payment_completed" value="yes" required
+                     onchange="document.getElementById('place_order_btn').disabled = !this.checked;"
+                     class="mt-1 w-4 h-4 rounded border-gold text-gold focus:ring-gold accent-gold shrink-0">
+              <span class="text-xs sm:text-sm font-medium text-ink leading-snug">
+                I have completed the payment
+              </span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Order Summary -->
+      <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 h-fit space-y-6 border border-black/5">
+        <h2 class="font-serif text-lg sm:text-xl border-b border-ink/10 pb-4">Order Summary</h2>
+
+        <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+          {% for item in cart.items.all %}
+          <div class="flex items-center gap-3 text-sm">
+            <div class="w-12 h-12 rounded-lg bg-champagne overflow-hidden shrink-0">
+              {% with img=item.product.images.first %}
+              {% if img %}<img src="{{ img.image.url }}" class="w-full h-full object-cover">{% endif %}
+              {% endwith %}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-serif text-xs truncate">{{ item.product.name }}</p>
+              <p class="text-xs text-ink/50">Qty: {{ item.quantity }}</p>
+            </div>
+            <p class="font-medium text-xs shrink-0">₹{{ item.line_total }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="border-t border-ink/10 pt-4 space-y-2 text-sm">
+          <div class="flex justify-between text-ink/70"><span>Subtotal</span><span>₹{{ cart.subtotal }}</span></div>
+          <div class="flex justify-between text-ink/70">
+            <span>Shipping</span>
+            <span>{% if cart.subtotal > 2000 %}<span class="text-green-600 font-medium">FREE</span>{% else %}₹150{% endif %}</span>
+          </div>
+          <div class="flex justify-between font-serif text-base sm:text-lg text-ink font-semibold pt-2 border-t border-ink/10">
+            <span>Total</span>
+            <span>₹{% if cart.subtotal > 2000 %}{{ cart.subtotal }}{% else %}{{ cart.subtotal|add:150 }}{% endif %}</span>
+          </div>
+        </div>
+
+        <button type="submit" id="place_order_btn" disabled
+                class="w-full py-3.5 bg-ink text-cream rounded-full font-medium text-sm tracking-wide hover:bg-gold hover:text-ink transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+          Place Order &amp; Open WhatsApp →
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+{% endblock %}

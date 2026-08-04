@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | ETERNAAURA Admin{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/css/eternaaura_admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+  <h1 id="site-name"><a href="{% url 'admin:index' %}">ETERNAAURA <span style="opacity:.6; font-size:.6em; font-family: Inter, sans-serif; text-transform: uppercase; letter-spacing:.15em;">Admin</span></a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

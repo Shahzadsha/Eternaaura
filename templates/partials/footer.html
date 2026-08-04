@@ -1,0 +1,31 @@
+<footer class="bg-ink text-cream/80 mt-16 sm:mt-24 border-t border-gold/20">
+  <div class="max-w-7xl mx-auto px-4 md:px-8 py-12 sm:py-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
+    <div class="col-span-1 sm:col-span-2">
+      <div class="font-serif text-2xl tracking-[0.2em] text-cream mb-3 sm:mb-4">ETERNA<span class="text-gold-light">AURA</span></div>
+      <p class="font-accent text-base sm:text-lg text-cream/70 max-w-sm leading-relaxed">Timeless jewellery, crafted with rare gemstones and pure gold — for the moments that define you.</p>
+    </div>
+    <div>
+      <h4 class="text-gold-light font-medium mb-3 sm:mb-4 tracking-wide text-sm uppercase">Shop</h4>
+      <ul class="space-y-2 text-sm">
+        <li><a href="{% url 'catalog:category_detail' slug='necklaces' %}" class="hover:text-gold-light transition-colors">Necklaces</a></li>
+        <li><a href="{% url 'catalog:category_detail' slug='rings' %}" class="hover:text-gold-light transition-colors">Rings</a></li>
+        <li><a href="{% url 'catalog:category_detail' slug='earrings' %}" class="hover:text-gold-light transition-colors">Earrings</a></li>
+        <li><a href="{% url 'catalog:collection_detail' slug='bridal-collection' %}" class="hover:text-gold-light transition-colors">Bridal</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-gold-light font-medium mb-3 sm:mb-4 tracking-wide text-sm uppercase">Support</h4>
+      <ul class="space-y-2 text-sm">
+        <li><a href="{% url 'orders:history' %}" class="hover:text-gold-light transition-colors">Track Order</a></li>
+        <li><a href="#" class="hover:text-gold-light transition-colors">Returns &amp; Exchanges</a></li>
+        <li><a href="#" class="hover:text-gold-light transition-colors">Size Guide</a></li>
+        <li><a href="#" class="hover:text-gold-light transition-colors">Contact Us</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="border-t border-white/10 py-6 text-center text-xs text-cream/50 px-4">
+    © {% now "Y" %} ETERNAAURA. All rights reserved.
+  </div>
+</footer>
+

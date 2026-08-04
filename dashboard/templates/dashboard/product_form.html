@@ -1,0 +1,151 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}{% if is_edit %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="max-w-4xl space-y-8">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm px-4 py-3">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
+  <div class="bg-panel border border-white/10 rounded-xl p-6">
+    <h2 class="font-serif text-white mb-4">Basics</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}<p class="text-red-400 text-xs mt-1">{{ form.name.errors|striptags }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">SKU</label>
+        {{ form.sku }}
+        {% if form.sku.errors %}<p class="text-red-400 text-xs mt-1">{{ form.sku.errors|striptags }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Category</label>
+        {{ form.category }}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Collections</label>
+        {{ form.collections }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Short Description</label>
+        {{ form.short_description }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Full Description</label>
+        {{ form.description }}
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-panel border border-white/10 rounded-xl p-6">
+    <h2 class="font-serif text-white mb-4">Jewellery Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Metal Purity</label>
+        {{ form.metal_purity }}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Metal Weight (grams)</label>
+        {{ form.metal_weight_grams }}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Gemstone</label>
+        {{ form.gemstone }}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Gemstone Details</label>
+        {{ form.gemstone_details }}
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-panel border border-white/10 rounded-xl p-6">
+    <h2 class="font-serif text-white mb-4">Pricing &amp; Stock</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Selling Price (₹)</label>
+        {{ form.price }}
+        {% if form.price.errors %}<p class="text-red-400 text-xs mt-1">{{ form.price.errors|striptags }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Compare-at (Original) Price (₹)</label>
+        {{ form.compare_at_price }}
+        {% if form.compare_at_price.errors %}<p class="text-red-400 text-xs mt-1">{{ form.compare_at_price.errors|striptags }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Stock Quantity</label>
+        {{ form.stock_quantity }}
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Low Stock Alert Threshold</label>
+        {{ form.low_stock_threshold }}
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-panel border border-white/10 rounded-xl p-6">
+    <h2 class="font-serif text-white mb-4">Visibility &amp; Merchandising</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 text-sm text-gray-300">
+      <label class="flex items-center gap-2 cursor-pointer">{{ form.is_published }} Published</label>
+      <label class="flex items-center gap-2 cursor-pointer">{{ form.is_featured }} Featured</label>
+      <label class="flex items-center gap-2 cursor-pointer">{{ form.is_new_arrival }} New Arrival</label>
+      <label class="flex items-center gap-2 cursor-pointer">{{ form.is_best_seller }} Best Seller</label>
+      <label class="flex items-center gap-2 cursor-pointer">{{ form.is_trending }} Trending</label>
+    </div>
+  </div>
+
+  <div class="bg-panel border border-white/10 rounded-xl p-6">
+    <h2 class="font-serif text-white mb-2">Images</h2>
+    <p class="text-xs text-gray-500 mb-4">Upload multiple high-quality images. The first image (or first uploaded when none exist yet) becomes the primary image.</p>
+
+    {% if existing_images %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-5">
+      {% for img in existing_images %}
+      <div class="relative group">
+        <img src="{{ img.image.url }}" class="w-full aspect-square object-cover rounded-lg border border-white/10">
+        {% if img.is_primary %}<span class="absolute top-1 left-1 text-[10px] bg-gold text-ink px-1.5 py-0.5 rounded">Primary</span>{% endif %}
+        <button type="submit" form="delete-image-{{ img.id }}"
+                class="absolute top-1 right-1 bg-black/70 text-red-300 text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center">×</button>
+      </div>
+      <form id="delete-image-{{ img.id }}" method="post"
+            action="{% url 'dashboard:product_image_delete' pk=object.pk image_id=img.id %}" class="hidden">
+        {% csrf_token %}
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+
+    <label for="id_images" class="block cursor-pointer border-2 border-dashed border-white/15 hover:border-gold rounded-xl p-8 text-center transition">
+      <span class="text-gray-400 text-sm">Click to choose images, or drag &amp; drop here</span>
+      <input id="id_images" type="file" name="images" multiple accept="image/*" class="hidden"
+             onchange="document.getElementById('file-count').textContent = this.files.length + ' file(s) selected'">
+      <div id="file-count" class="text-xs text-gold-light mt-2"></div>
+    </label>
+  </div>
+
+  <div class="flex gap-3">
+    <button type="submit" class="px-6 py-2.5 rounded-lg bg-gold hover:bg-gold-light text-ink font-semibold text-sm">
+      {% if is_edit %}Save Changes{% else %}Create Product{% endif %}
+    </button>
+    <a href="{% url 'dashboard:products' %}" class="px-6 py-2.5 rounded-lg border border-white/10 text-sm text-gray-300 hover:bg-white/5">Cancel</a>
+  </div>
+</form>
+
+<script>
+  // Basic drag-and-drop support on top of the plain file input.
+  const dropZone = document.querySelector('label[for="id_images"]');
+  const fileInput = document.getElementById('id_images');
+  ['dragover', 'dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => e.preventDefault());
+  });
+  dropZone.addEventListener('drop', e => {
+    fileInput.files = e.dataTransfer.files;
+    document.getElementById('file-count').textContent = fileInput.files.length + ' file(s) selected';
+  });
+</script>
+{% endblock %}

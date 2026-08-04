@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-12">
+  <a href="{% url 'accounts:addresses' %}" class="text-xs text-gold-dark font-medium hover:underline mb-2 inline-block">← Back to Saved Addresses</a>
+  <h1 class="font-serif text-3xl md:text-4xl mb-6">Add New Address</h1>
+
+  <form method="post" action="{% url 'accounts:address_add' %}" class="bg-white rounded-2xl shadow-sm p-6 space-y-4 border border-black/5">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Full Name</label>
+        <input type="text" name="full_name" required placeholder="John Doe" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Phone Number</label>
+        <input type="text" name="phone_number" required placeholder="+91 9876543210" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Label</label>
+        <select name="address_type" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+          <option value="home">Home</option>
+          <option value="work">Work</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Street Address / House No.</label>
+        <input type="text" name="line1" required placeholder="123 Luxury Lane, Flat 4B" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Line 2 (Optional)</label>
+        <input type="text" name="line2" placeholder="Near Central Park" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">City</label>
+        <input type="text" name="city" required placeholder="Mumbai" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">State</label>
+        <input type="text" name="state" required placeholder="Maharashtra" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Postal Code</label>
+        <input type="text" name="postal_code" required placeholder="400001" class="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm focus:outline-none focus:border-gold">
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 pt-2">
+      <input type="checkbox" name="is_default" id="is_default" class="accent-gold rounded">
+      <label for="is_default" class="text-sm text-ink/70">Set as my default shipping address</label>
+    </div>
+
+    <div class="pt-4 flex gap-3">
+      <button type="submit" class="px-8 py-3 bg-ink text-cream rounded-full font-medium text-sm hover:bg-gold hover:text-ink transition-colors">
+        Save Address
+      </button>
+      <a href="{% url 'accounts:addresses' %}" class="px-6 py-3 border border-ink/20 rounded-full font-medium text-sm text-ink/70 hover:border-gold transition-colors">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

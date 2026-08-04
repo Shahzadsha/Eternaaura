@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-20">
+  <h1 class="font-serif text-3xl mb-8 text-center">Welcome Back</h1>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="w-full bg-ink text-cream py-3 rounded-full font-medium hover:bg-gold hover:text-ink transition-colors">Sign In</button>
+  </form>
+  <p class="text-center text-sm mt-6"><a href="{% url 'accounts:password_reset' %}" class="text-gold-dark hover:underline">Forgot password?</a></p>
+  <p class="text-center text-sm mt-2">New here? <a href="{% url 'accounts:register' %}" class="text-gold-dark hover:underline">Create an account</a></p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  try {
+    if (window.localStorage) localStorage.clear();
+    if (window.sessionStorage) sessionStorage.clear();
+  } catch (e) {
+    console.log("Storage reset complete");
+  }
+</script>
+{% endblock %}
+

@@ -1,0 +1,158 @@
+/* ETERNAAURA — Django admin theme override
+   Loaded AFTER Django's own admin CSS, so these variables + rules win.
+   Uses Django's built-in CSS custom properties, so it survives Django
+   upgrades without touching core admin templates. */
+
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap");
+
+:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+    --primary: #c9a453;           /* gold */
+    --secondary: #141416;         /* near-black panel */
+    --accent: #e3cc8c;            /* light gold */
+    --primary-fg: #0a0a0b;
+
+    --body-fg: #e8e6e2;
+    --body-bg: #0a0a0b;
+    --body-quiet-color: #9a968c;
+    --body-medium-color: #cfc9bd;
+    --body-loud-color: #fff;
+
+    --header-color: #f3ead1;
+    --header-branding-color: #e3cc8c;
+    --header-bg: #141416;
+    --header-link-color: #e3cc8c;
+
+    --breadcrumbs-fg: #cfc9bd;
+    --breadcrumbs-link-fg: #e3cc8c;
+    --breadcrumbs-bg: #1b1b1e;
+
+    --link-fg: #d8b968;
+    --link-hover-color: #f3ead1;
+    --link-selected-fg: #e3cc8c;
+
+    --hairline-color: rgba(255,255,255,0.08);
+    --border-color: rgba(255,255,255,0.12);
+
+    --error-fg: #f87171;
+
+    --message-success-bg: #12271c;
+    --message-warning-bg: #2b2410;
+    --message-error-bg: #2b1414;
+
+    --darkened-bg: #141416;
+    --selected-bg: rgba(201,164,83,0.12);
+    --selected-row: rgba(201,164,83,0.10);
+
+    --button-fg: #0a0a0b;
+    --button-bg: #c9a453;
+    --button-hover-bg: #e3cc8c;
+    --default-button-bg: #c9a453;
+    --default-button-hover-bg: #e3cc8c;
+    --close-button-bg: #3a3a3d;
+    --close-button-hover-bg: #52524f;
+    --delete-button-bg: #a13d3d;
+    --delete-button-hover-bg: #c24d4d;
+
+    --object-tools-bg: #c9a453;
+    --object-tools-hover-bg: #e3cc8c;
+
+    --font-family-primary: "Inter", -apple-system, sans-serif;
+}
+
+body {
+    background: var(--body-bg);
+    font-family: var(--font-family-primary);
+}
+
+/* Module panels (fieldsets, listing tables) get a slightly raised panel look */
+.module, .card, #content-main .results, .dashboard .module table {
+    background: #141416;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#header {
+    background: #141416;
+    border-bottom: 1px solid var(--border-color);
+    padding: 14px 40px;
+}
+
+#branding h1, #branding h1 a:link, #branding h1 a:visited {
+    font-family: "Playfair Display", serif;
+    letter-spacing: 0.04em;
+    color: var(--header-branding-color);
+    font-weight: 700;
+}
+
+div.breadcrumbs {
+    background: var(--breadcrumbs-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Buttons */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border: none;
+    transition: background 0.15s ease;
+}
+
+/* Result list rows */
+#changelist table thead th {
+    background: #1b1b1e;
+    color: var(--body-medium-color);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+}
+
+#changelist table tbody tr:hover {
+    background: rgba(201,164,83,0.06);
+}
+
+/* Thumbnails used by list_display thumbnail methods across admin.py files */
+.admin-thumb {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    display: block;
+}
+
+/* Dashboard app/model group headers */
+.dashboard .module caption, .module h2, .module caption, .inline-group h2 {
+    background: #1b1b1e;
+    color: var(--header-branding-color);
+    font-family: "Playfair Display", serif;
+    letter-spacing: 0.02em;
+}
+
+/* Login page */
+.login #container {
+    background: #141416;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+}
+.login #header {
+    border-radius: 14px 14px 0 0;
+}
+
+/* Filter sidebar */
+#changelist-filter {
+    background: #141416;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+#changelist-filter h2 {
+    background: #1b1b1e;
+    font-family: "Playfair Display", serif;
+    color: var(--header-branding-color);
+}
+#changelist-filter li.selected a {
+    color: var(--primary);
+}

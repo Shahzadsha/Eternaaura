@@ -1,0 +1,38 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Categories{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+  <p class="text-sm text-gray-500">{{ categories.count }} categories</p>
+  <a href="{% url 'dashboard:category_create' %}" class="text-xs bg-gold text-ink font-semibold px-4 py-2 rounded-lg hover:bg-gold-light transition">+ Add Category</a>
+</div>
+<div class="bg-panel border border-white/10 rounded-xl overflow-x-auto">
+  <table class="w-full text-sm min-w-[500px]">
+    <thead class="bg-panel2 text-gray-400 text-xs uppercase tracking-wide">
+      <tr>
+        <th class="text-left px-5 py-3">Name</th>
+        <th class="text-left px-5 py-3">Products</th>
+        <th class="text-left px-5 py-3">Status</th>
+        <th class="text-right px-5 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in categories %}
+      <tr class="border-t border-white/5 hover:bg-white/5">
+        <td class="px-5 py-3 text-gray-200 font-medium">{{ c.name }}</td>
+        <td class="px-5 py-3 text-gray-400">{{ c.products.count }}</td>
+        <td class="px-5 py-3">
+          {% if c.is_active %}<span class="text-emerald-400 text-xs font-medium">Active</span>{% else %}<span class="text-gray-500 text-xs">Inactive</span>{% endif %}
+        </td>
+        <td class="px-5 py-3 text-right space-x-3">
+          <a href="{% url 'dashboard:category_edit' c.pk %}" class="text-gold-light hover:underline text-xs">Edit</a>
+          <a href="{% url 'dashboard:category_delete' c.pk %}" class="text-red-400 hover:underline text-xs">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="px-5 py-8 text-center text-gray-500">No categories yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

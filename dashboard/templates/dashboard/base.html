@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Staff Console — ETERNAAURA{% endblock %}</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          panel: '#141416',
+          panel2: '#1b1b1e',
+          ink: '#0a0a0b',
+          gold: { DEFAULT: '#c9a453', light: '#e3cc8c', dark: '#93752f' },
+        },
+        fontFamily: {
+          serif: ['"Playfair Display"', 'serif'],
+          sans: ['Inter', 'sans-serif'],
+        },
+      },
+    },
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+{% block extra_head %}{% endblock %}
+</head>
+<body class="bg-ink text-gray-200 font-sans antialiased min-h-screen" x-data="{ sidebarOpen: false }">
+{% if user.is_authenticated and user.is_staff %}
+<div class="min-h-screen flex flex-col lg:flex-row">
+
+  <!-- Mobile Backdrop Overlay -->
+  <div x-show="sidebarOpen" x-transition:enter="transition-opacity ease-linear duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click="sidebarOpen = false" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden" style="display: none;"></div>
+
+  <!-- Sidebar (Desktop fixed + Mobile slide-out drawer) -->
+  <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'" class="fixed inset-y-0 left-0 z-50 w-64 bg-panel border-r border-white/5 flex flex-col transition-transform duration-300 ease-in-out lg:static lg:inset-auto lg:translate-x-0 shrink-0">
+    <div class="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+      <div>
+        <p class="font-serif text-xl tracking-wide text-gold-light">ETERNAAURA</p>
+        <p class="text-[11px] uppercase tracking-[0.2em] text-gray-500 mt-0.5">Staff Console</p>
+      </div>
+      <button @click="sidebarOpen = false" class="lg:hidden text-gray-400 hover:text-white p-1" aria-label="Close sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 text-sm overflow-y-auto">
+      <a href="{% url 'dashboard:home' %}" class="block px-3 py-2.5 rounded-md hover:bg-white/5 hover:text-gold-light transition {% if request.resolver_match.url_name == 'home' %}bg-white/5 text-gold-light font-medium{% endif %}">Overview</a>
+      <a href="{% url 'dashboard:products' %}" class="block px-3 py-2.5 rounded-md hover:bg-white/5 hover:text-gold-light transition {% if 'product' in request.resolver_match.url_name %}bg-white/5 text-gold-light font-medium{% endif %}">Products &amp; Inventory</a>
+      <a href="{% url 'dashboard:categories' %}" class="block px-3 py-2.5 rounded-md hover:bg-white/5 hover:text-gold-light transition {% if 'categor' in request.resolver_match.url_name %}bg-white/5 text-gold-light font-medium{% endif %}">Categories</a>
+      <a href="{% url 'dashboard:banners' %}" class="block px-3 py-2.5 rounded-md hover:bg-white/5 hover:text-gold-light transition {% if 'banner' in request.resolver_match.url_name %}bg-white/5 text-gold-light font-medium{% endif %}">Homepage Banners</a>
+      <a href="{% url 'dashboard:orders' %}" class="block px-3 py-2.5 rounded-md hover:bg-white/5 hover:text-gold-light transition {% if request.resolver_match.url_name == 'orders' %}bg-white/5 text-gold-light font-medium{% endif %}">Orders &amp; Payments</a>
+      <a href="{% url 'dashboard:analytics' %}" class="block px-3 py-2.5 rounded-md hover:bg-white/5 hover:text-gold-light transition {% if request.resolver_match.url_name == 'analytics' %}bg-white/5 text-gold-light font-medium{% endif %}">Sales Analytics</a>
+      <a href="/django-admin/" class="block px-3 py-2.5 rounded-md hover:bg-white/5 hover:text-gold-light transition text-xs text-gray-500">Advanced (Django admin)</a>
+    </nav>
+    <div class="px-6 py-4 border-t border-white/5 text-xs text-gray-500">
+      Signed in as <span class="text-gray-300 font-medium">{{ user.get_username }}</span><br>
+      <a href="{% url 'catalog:home' %}" class="text-gray-400 hover:text-gold-light mt-1 inline-block">← Back to Storefront</a><br>
+      <a href="/django-admin/logout/" class="text-gold hover:text-gold-light mt-1 inline-block">Sign out</a>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 min-w-0 flex flex-col">
+    <!-- Top Header -->
+    <header class="h-16 border-b border-white/5 bg-panel/80 backdrop-blur sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8">
+      <div class="flex items-center gap-3">
+        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 rounded-lg bg-white/5 text-gray-300 hover:text-white focus:outline-none" aria-label="Toggle Navigation">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+        </button>
+        <h1 class="font-serif text-base sm:text-lg text-white font-medium">{% block page_title %}Dashboard{% endblock %}</h1>
+      </div>
+      <span class="text-xs text-gray-500">{% now "l, d M Y" %}</span>
+    </header>
+
+    <main class="p-4 sm:p-8 flex-1">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-white/5 border border-gold/30 text-gold-light">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+</body>
+</html>
+
