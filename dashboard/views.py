@@ -65,8 +65,27 @@ class OrderManagementView(StaffRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["orders"] = Order.objects.all().select_related("user")
+        ctx["orders"] = Order.objects.all().select_related("user").prefetch_related("payments").order_by("-placed_at")
         return ctx
+
+
+class VerifyPaymentView(StaffRequiredMixin, View):
+    """
+    Staff action to manually verify a customer's UPI payment and transition order to CONFIRMED.
+    Required for UPI manual staff verification flow.
+    """
+    def post(self, request, pk):
+        from payments.models import Payment
+        order = get_object_or_404(Order, pk=pk)
+        payment = order.payments.order_by("-created_at").first()
+        if payment:
+            payment.status = Payment.Status.SUCCESS
+            payment.save(update_fields=["status"])
+        
+        order.status = Order.Status.CONFIRMED
+        order.save(update_fields=["status"])
+        messages.success(request, f"Order #{order.order_number} payment verified and marked Confirmed.")
+        return redirect("dashboard:orders")
 
 
 from django.db.models.functions import TruncDate

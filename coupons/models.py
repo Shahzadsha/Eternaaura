@@ -14,17 +14,23 @@ class Coupon(models.Model):
     min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     usage_limit = models.PositiveIntegerField(null=True, blank=True)
+    user_limit = models.PositiveIntegerField(default=1, help_text="Maximum times a single user can redeem this coupon")
     times_used = models.PositiveIntegerField(default=0)
     valid_from = models.DateTimeField(default=timezone.now)
     valid_until = models.DateTimeField()
     is_active = models.BooleanField(default=True)
 
-    def is_valid_now(self):
+    def is_valid_now(self, user=None):
         now = timezone.now()
         if not self.is_active or not (self.valid_from <= now <= self.valid_until):
             return False
         if self.usage_limit is not None and self.times_used >= self.usage_limit:
             return False
+        if user and user.is_authenticated:
+            from orders.models import Order
+            user_used_count = Order.objects.filter(user=user, coupon=self).count()
+            if self.user_limit is not None and user_used_count >= self.user_limit:
+                return False
         return True
 
     def calculate_discount(self, order_total):

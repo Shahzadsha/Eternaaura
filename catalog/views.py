@@ -1,12 +1,11 @@
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
 from .models import Category, Collection, HeroBanner, Product, RecentlyViewed, Wishlist
-
 
 
 class HomeView(TemplateView):
@@ -80,8 +79,6 @@ class ProductDetailView(DetailView):
     def get_queryset(self):
         qs = Product.objects.all()
         if not (self.request.user.is_authenticated and self.request.user.is_staff):
-            # Draft/unpublished products stay hidden from direct links too,
-            # not just from listing pages. Staff can still preview them.
             qs = qs.filter(is_published=True)
         return qs
 
@@ -89,14 +86,35 @@ class ProductDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         product = self.object
 
-        # Related products: same category, overlapping price band, popularity — plus curated picks
         related = Product.objects.filter(
             is_published=True, category=product.category
         ).exclude(pk=product.pk).order_by("-is_best_seller", "-average_rating")[:8]
         manual_related = product.manually_related_products.filter(is_published=True)
         ctx["related_products"] = manual_related if manual_related.exists() else related
 
-        ctx["reviews"] = product.reviews.filter(is_approved=True)
+        review_sort = self.request.GET.get("review_sort", "newest")
+        reviews_qs = product.reviews.filter(is_approved=True).select_related("user").prefetch_related("images")
+        if review_sort in ["rating_high", "highest_rated"]:
+            reviews_qs = reviews_qs.order_by("-rating", "-created_at")
+        elif review_sort in ["rating_low", "lowest_rated"]:
+            reviews_qs = reviews_qs.order_by("rating", "-created_at")
+        elif review_sort in ["helpful", "most_helpful"]:
+            reviews_qs = reviews_qs.order_by("-helpful_count", "-created_at")
+        elif review_sort == "oldest":
+            reviews_qs = reviews_qs.order_by("created_at")
+        else:
+            reviews_qs = reviews_qs.order_by("-created_at")
+
+        from django.core.paginator import Paginator
+        paginator = Paginator(reviews_qs, 10)
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        ctx["reviews"] = page_obj
+        ctx["reviews_page_obj"] = page_obj
+        ctx["reviews_paginator"] = paginator
+        ctx["is_reviews_paginated"] = page_obj.has_other_pages()
+        ctx["review_sort"] = review_sort
         ctx["questions"] = product.questions.prefetch_related("answers")
 
         if self.request.user.is_authenticated:
@@ -136,21 +154,19 @@ class SearchView(ListView):
 class ToggleWishlistView(View):
 
     def post(self, request, product_id):
+        referer = request.META.get("HTTP_REFERER", reverse("catalog:home"))
         if not request.user.is_authenticated:
-            referer = request.META.get("HTTP_REFERER", "/")
-            login_url = f"{reverse('accounts:login')}?next={referer}"
-            return JsonResponse({"authenticated": False, "redirect_url": login_url}, status=401)
+            return redirect(f"{reverse('accounts:login')}?next={referer}")
 
         product = get_object_or_404(Product, pk=product_id)
         item, created = Wishlist.objects.get_or_create(user=request.user, product=product)
         if not created:
             item.delete()
-            wishlisted = False
-        else:
-            wishlisted = True
 
-        count = Wishlist.objects.filter(user=request.user).count()
-        return JsonResponse({"authenticated": True, "wishlisted": wishlisted, "count": count})
+        return redirect(referer)
+
+    def get(self, request, product_id):
+        return self.post(request, product_id)
 
 
 class BaseShowcaseView(ListView):
@@ -210,5 +226,3 @@ class TrendingCollectionsView(BaseShowcaseView):
         ctx["page_subtitle"] = "Explore today's most sought-after designs and seasonal high-jewellery highlights."
         ctx["breadcrumb_title"] = "Trending Collections"
         return ctx
-
-

@@ -1,9 +1,10 @@
-import random
+import secrets
 import string
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from config.validators import validate_image_extension, validate_image_size
 
 
 class User(AbstractUser):
@@ -20,7 +21,7 @@ class User(AbstractUser):
         OTHER = "other", "Other"
 
     gender = models.CharField(max_length=15, choices=Gender.choices, default=Gender.UNSPECIFIED)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
+    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True, validators=[validate_image_extension, validate_image_size])
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -93,7 +94,7 @@ class OTPVerification(models.Model):
 
     @staticmethod
     def generate_code():
-        return "".join(random.choices(string.digits, k=6))
+        return "".join(secrets.choice(string.digits) for _ in range(6))
 
     def is_valid(self):
         return not self.is_used and timezone.now() <= self.expires_at

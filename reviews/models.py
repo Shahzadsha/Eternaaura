@@ -22,9 +22,12 @@ class Review(models.Model):
         return f"{self.product.name} — {self.rating}★ by {self.user}"
 
 
+from config.validators import validate_image_extension, validate_image_size
+
+
 class ReviewImage(models.Model):
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="reviews/")
+    image = models.ImageField(upload_to="reviews/", validators=[validate_image_extension, validate_image_size])
 
 
 class ProductQuestion(models.Model):

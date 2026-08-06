@@ -55,7 +55,7 @@ class CartDetailView(View):
 
 class AddToCartView(View):
     def post(self, request, product_id):
-        product = get_object_or_404(Product, pk=product_id)
+        product = get_object_or_404(Product, pk=product_id, is_published=True)
         cart = _get_or_create_cart(request)
         quantity = _safe_quantity(request.POST.get("quantity"), default=1, maximum=max(product.stock_quantity, 0))
         item, created = CartItem.objects.get_or_create(cart=cart, product=product, variant=None)

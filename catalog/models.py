@@ -2,6 +2,12 @@ import uuid
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from config.validators import (
+    validate_image_extension,
+    validate_image_size,
+    validate_video_extension,
+    validate_video_size,
+)
 
 
 class TimeStamped(models.Model):
@@ -18,7 +24,7 @@ class Category(TimeStamped):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to="categories/", blank=True, null=True)
+    image = models.ImageField(upload_to="categories/", blank=True, null=True, validators=[validate_image_extension, validate_image_size])
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
     is_active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)
@@ -46,7 +52,7 @@ class Collection(TimeStamped):
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
     description = models.TextField(blank=True)
-    banner_image = models.ImageField(upload_to="collections/", blank=True, null=True)
+    banner_image = models.ImageField(upload_to="collections/", blank=True, null=True, validators=[validate_image_extension, validate_image_size])
     is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
@@ -138,7 +144,7 @@ class Product(TimeStamped):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="products/")
+    image = models.ImageField(upload_to="products/", validators=[validate_image_extension, validate_image_size])
     alt_text = models.CharField(max_length=200, blank=True)
     display_order = models.PositiveIntegerField(default=0)
     is_primary = models.BooleanField(default=False)
@@ -158,8 +164,8 @@ class Product360View(models.Model):
 
 class ProductVideo(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="videos")
-    video = models.FileField(upload_to="products/videos/")
-    thumbnail = models.ImageField(upload_to="products/video_thumbs/", blank=True, null=True)
+    video = models.FileField(upload_to="products/videos/", validators=[validate_video_extension, validate_video_size])
+    thumbnail = models.ImageField(upload_to="products/video_thumbs/", blank=True, null=True, validators=[validate_image_extension, validate_image_size])
 
 
 class VariantAttribute(models.Model):
@@ -220,7 +226,7 @@ class HeroBanner(TimeStamped):
     """Auto-sliding homepage carousel slides — fully admin-managed."""
     title = models.CharField(max_length=150)
     subtitle = models.CharField(max_length=250, blank=True)
-    image = models.ImageField(upload_to="banners/")
+    image = models.ImageField(upload_to="banners/", validators=[validate_image_extension, validate_image_size])
     cta_label = models.CharField(max_length=50, default="Shop Now")
     cta_url = models.CharField(max_length=300, blank=True)
     display_order = models.PositiveIntegerField(default=0)

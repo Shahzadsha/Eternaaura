@@ -8,16 +8,41 @@ from catalog.models import Product
 from .models import ProductQuestion, Review
 
 
+from orders.models import Order, OrderItem
+
+
 class AddReviewView(LoginRequiredMixin, View):
     def post(self, request, product_id):
         product = get_object_or_404(Product, pk=product_id)
-        rating_val = max(1, min(5, int(request.POST.get("rating", 5))))
+
+        try:
+            rating_val = int(request.POST.get("rating", 5))
+            if not (1 <= rating_val <= 5):
+                raise ValueError()
+        except (ValueError, TypeError):
+            messages.error(request, "Please select a valid rating between 1 and 5 stars.")
+            return redirect(product.get_absolute_url())
+
+        # Fallback check for duplicate review by user
+        if Review.objects.filter(product=product, user=request.user).exists():
+            messages.error(request, "You have already submitted a review for this product.")
+            return redirect(product.get_absolute_url())
+
+        # Check for delivered purchase to verify
+        matching_order_item = OrderItem.objects.filter(
+            order__user=request.user,
+            product=product,
+            order__status=Order.Status.DELIVERED
+        ).first()
+
         Review.objects.create(
             product=product,
             user=request.user,
+            order_item=matching_order_item,
             rating=rating_val,
             title=request.POST.get("title", "").strip(),
             body=request.POST.get("body", "").strip(),
+            is_verified_purchase=bool(matching_order_item),
         )
         # Recalculate average_rating and review_count
         approved_reviews = product.reviews.filter(is_approved=True)

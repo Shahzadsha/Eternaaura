@@ -23,8 +23,8 @@ class ApplyCouponView(View):
             return redirect(request.META.get("HTTP_REFERER", "cart:detail"))
 
         coupon = Coupon.objects.filter(code__iexact=code, is_active=True).first()
-        if not coupon or not coupon.is_valid_now():
-            messages.error(request, "Invalid or expired coupon code.")
+        if not coupon or not coupon.is_valid_now(request.user):
+            messages.error(request, "Invalid, expired, or already redeemed coupon code.")
             return redirect(request.META.get("HTTP_REFERER", "cart:detail"))
 
         cart = _get_cart(request)

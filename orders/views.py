@@ -1,5 +1,8 @@
+import logging
 import urllib.parse
+import uuid
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,8 +14,11 @@ from accounts.models import Address
 from accounts.views import NeverCacheLoginRequiredMixin
 from cart.models import Cart
 from catalog.models import Product
+from coupons.models import Coupon
+from payments.models import Payment
 from .models import Order, OrderItem, ReturnRequest
 
+logger = logging.getLogger("orders")
 
 
 def _get_cart(request):
@@ -112,8 +118,45 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
             messages.warning(request, "Your cart is empty. Add items before checking out.")
             return redirect("cart:detail")
 
+        subtotal = cart.subtotal
+        coupon_code = request.session.get("coupon_code")
+        coupon = None
+        discount_total = 0
+        if coupon_code:
+            coupon = Coupon.objects.filter(code__iexact=coupon_code, is_active=True).first()
+            if coupon and coupon.is_valid_now(request.user):
+                discount_total = coupon.calculate_discount(subtotal)
+
+        discounted_subtotal = max(0, subtotal - discount_total)
+        shipping_fee = 0 if discounted_subtotal > 2000 else 150
+        grand_total = discounted_subtotal + shipping_fee
+
+        txn_ref = request.session.get("checkout_txn_ref")
+        if not txn_ref:
+            txn_ref = f"TRX{uuid.uuid4().hex[:12].upper()}"
+            request.session["checkout_txn_ref"] = txn_ref
+
+        merchant_upi = getattr(settings, "MERCHANT_UPI_ID", "eternaaura@upi")
+        merchant_name = getattr(settings, "MERCHANT_NAME", "EternaAura")
+        merchant_name_enc = urllib.parse.quote(merchant_name)
+        upi_link = f"upi://pay?pa={merchant_upi}&pn={merchant_name_enc}&am={grand_total:.2f}&cu=INR&tr={txn_ref}&tn=Order_Checkout"
+        qr_preview_url = f"{reverse('payments:upi_qr_preview')}?am={grand_total:.2f}&tr={txn_ref}"
+
         addresses = request.user.addresses.all()
-        return render(request, "orders/checkout.html", {"cart": cart, "addresses": addresses, "is_buy_now": is_buy_now})
+        return render(request, "orders/checkout.html", {
+            "cart": cart,
+            "addresses": addresses,
+            "is_buy_now": is_buy_now,
+            "subtotal": subtotal,
+            "discount_total": discount_total,
+            "shipping_fee": shipping_fee,
+            "grand_total": grand_total,
+            "transaction_ref": txn_ref,
+            "upi_link": upi_link,
+            "merchant_upi_id": merchant_upi,
+            "merchant_name": merchant_name,
+            "qr_preview_url": qr_preview_url,
+        })
 
     def post(self, request):
         cart, is_buy_now = self._get_active_checkout_cart(request)
@@ -123,11 +166,7 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
 
         if not request.POST.get("payment_completed"):
             messages.error(request, "Please confirm that you have completed the payment via UPI QR code before placing your order.")
-            return render(request, "orders/checkout.html", {
-                "cart": cart,
-                "addresses": request.user.addresses.all(),
-                "is_buy_now": is_buy_now
-            })
+            return self.get(request)
 
         address_id = request.POST.get("address_id")
         address = None
@@ -147,11 +186,7 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
 
             if not all([full_name, phone_number, line1, city, state, postal_code]):
                 messages.error(request, "Please fill in all required address fields or select a saved address.")
-                return render(request, "orders/checkout.html", {
-                    "cart": cart,
-                    "addresses": request.user.addresses.all(),
-                    "is_buy_now": is_buy_now
-                })
+                return self.get(request)
 
             address = Address.objects.create(
                 user=request.user,
@@ -168,13 +203,12 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
 
         try:
             with transaction.atomic():
-                # Validate stock availability
+                # Validate stock availability with select_for_update
                 for item in cart.items.all():
-                    if item.quantity > item.product.stock_quantity:
-                        messages.error(request, f"Sorry, '{item.product.name}' only has {item.product.stock_quantity} left in stock.")
+                    product = Product.objects.select_for_update().get(pk=item.product.pk)
+                    if item.quantity > product.stock_quantity:
+                        messages.error(request, f"Sorry, '{product.name}' only has {product.stock_quantity} left in stock.")
                         return redirect("cart:detail")
-
-                from coupons.models import Coupon
 
                 subtotal = cart.subtotal
                 coupon_code = request.session.get("coupon_code")
@@ -182,8 +216,8 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                 discount_total = 0
 
                 if coupon_code:
-                    coupon = Coupon.objects.filter(code__iexact=coupon_code, is_active=True).first()
-                    if coupon and coupon.is_valid_now():
+                    coupon = Coupon.objects.select_for_update().filter(code__iexact=coupon_code, is_active=True).first()
+                    if coupon and coupon.is_valid_now(request.user):
                         discount_total = coupon.calculate_discount(subtotal)
                         coupon.times_used += 1
                         coupon.save(update_fields=["times_used"])
@@ -197,7 +231,7 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                 order = Order.objects.create(
                     user=request.user,
                     shipping_address=address,
-                    status=Order.Status.CONFIRMED,
+                    status=Order.Status.PENDING,
                     subtotal=subtotal,
                     discount_total=discount_total,
                     shipping_fee=shipping_fee,
@@ -205,6 +239,24 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                     coupon=coupon,
                 )
                 request.session.pop("coupon_code", None)
+
+                # Create Payment record with unique transaction_ref and server-side validated amount
+                transaction_ref = request.session.pop("checkout_txn_ref", None) or f"TRX{uuid.uuid4().hex[:12].upper()}"
+                while Payment.objects.filter(transaction_ref=transaction_ref).exists():
+                    transaction_ref = f"TRX{uuid.uuid4().hex[:12].upper()}"
+
+                merchant_upi = getattr(settings, "MERCHANT_UPI_ID", "eternaaura@upi")
+                merchant_name = urllib.parse.quote(getattr(settings, "MERCHANT_NAME", "EternaAura"))
+                upi_link = f"upi://pay?pa={merchant_upi}&pn={merchant_name}&am={grand_total:.2f}&cu=INR&tr={transaction_ref}&tn=Order_{order.order_number}"
+
+                payment = Payment.objects.create(
+                    order=order,
+                    gateway=Payment.Gateway.UPI_QR,
+                    transaction_ref=transaction_ref,
+                    amount=grand_total,
+                    status=Payment.Status.PENDING_VERIFICATION,
+                    upi_link=upi_link,
+                )
 
                 items_summary_lines = []
                 for idx, item in enumerate(cart.items.all(), start=1):
@@ -218,15 +270,15 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                     )
                     items_summary_lines.append(f"{idx}. *{item.product.name}* × {item.quantity} — ₹{item.line_total:,.2f}")
 
-                    # Deduct stock
-                    item.product.stock_quantity = max(0, item.product.stock_quantity - item.quantity)
-                    item.product.save(update_fields=["stock_quantity"])
+                    # Deduct stock with row locking
+                    product = Product.objects.select_for_update().get(pk=item.product.pk)
+                    product.stock_quantity = max(0, product.stock_quantity - item.quantity)
+                    product.save(update_fields=["stock_quantity"])
 
                 if is_buy_now:
                     request.session.pop("buy_now_session", None)
                 else:
                     cart.items.all().delete()
-
 
             # Format complete WhatsApp order message
             items_text = "\n".join(items_summary_lines)
@@ -240,8 +292,9 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                 f"✨ *ETERNAAURA — NEW ORDER PLACED* ✨\n\n"
                 f"📌 *ORDER DETAILS*\n"
                 f"• *Order ID:* #{order.order_number}\n"
+                f"• *Transaction Ref:* {payment.transaction_ref}\n"
                 f"• *Date & Time:* {order.placed_at.strftime('%B %d, %Y at %I:%M %p')}\n"
-                f"• *Payment Status:* Paid via UPI QR Code (Customer Confirmed)\n\n"
+                f"• *Payment Status:* Submitted via UPI QR (Pending Staff Verification)\n\n"
                 f"👤 *CUSTOMER INFORMATION*\n"
                 f"• *Name:* {addr.full_name}\n"
                 f"• *Phone:* {addr.phone_number}\n"
@@ -253,23 +306,20 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                 f"{discount_str}\n"
                 f"• *Shipping Charge:* {shipping_str}\n"
                 f"• *Total Amount:* ₹{order.grand_total:,.2f}\n\n"
-                f"📝 *NOTES:* Customer completed UPI QR payment and placed order via website."
+                f"📝 *NOTES:* Customer completed UPI QR payment flow and submitted order. Pending staff verification."
             )
 
             target_phone = "919847549961"
             encoded_msg = urllib.parse.quote(whatsapp_msg)
             whatsapp_url = f"https://api.whatsapp.com/send?phone={target_phone}&text={encoded_msg}"
 
-            messages.success(request, f"Order #{order.order_number} placed successfully!")
+            messages.success(request, f"Order #{order.order_number} submitted! Payment status: Pending Verification.")
             return redirect(whatsapp_url)
 
         except Exception as e:
-            messages.error(request, f"Order placement failed: {str(e)}")
-            return render(request, "orders/checkout.html", {
-                "cart": cart,
-                "addresses": request.user.addresses.all(),
-                "is_buy_now": is_buy_now
-            })
+            logger.exception("Order placement failed for user %s", request.user.pk)
+            messages.error(request, "Order placement failed due to an unexpected error. Please try again or contact support.")
+            return self.get(request)
 
 
 

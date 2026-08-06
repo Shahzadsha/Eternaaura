@@ -13,13 +13,16 @@ class StaffAreaAccessMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.prefix = f"/{settings.STAFF_LOGIN_PATH}/"
+        raw_prefix = settings.STAFF_LOGIN_PATH.strip("/")
+        self.prefix = f"/{raw_prefix}/"
+        self.prefix_without_slash = f"/{raw_prefix}"
 
     def __call__(self, request):
         path = request.path
+        normalized_path = path if path.endswith("/") else f"{path}/"
         login_path = f"{self.prefix}login/"
 
-        if path.startswith(self.prefix) and path != login_path:
+        if (normalized_path.startswith(self.prefix) or path == self.prefix_without_slash) and path != login_path and path != login_path.rstrip("/"):
             if not request.user.is_authenticated:
                 return redirect(f"{login_path}?next={path}")
             if not request.user.is_staff:

@@ -1,19 +1,26 @@
+import time
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import LoginView as DjangoLoginView
+from django.core.cache import cache
+from django.core.mail import send_mail
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views import View
 from django.views.decorators.cache import never_cache
 from django.views.generic import ListView, TemplateView
 
 from catalog.models import Wishlist
 from .forms import EternaAuraAuthenticationForm, RegistrationForm, UserProfileForm
-from .models import Address, OTPVerification
+from .models import Address, OTPVerification, User
 
 
 MAX_OTP_ATTEMPTS = 5
@@ -91,7 +98,29 @@ class LoginView(DjangoLoginView):
     template_name = "accounts/login.html"
     authentication_form = EternaAuraAuthenticationForm
 
+    def post(self, request, *args, **kwargs):
+        ip = request.META.get("REMOTE_ADDR", "127.0.0.1")
+        cache_key = f"login_attempts_{ip}"
+        attempts = cache.get(cache_key, 0)
+
+        if attempts >= 5:
+            messages.error(request, "Too many failed login attempts. Please wait 5 minutes before trying again.")
+            form = self.get_form()
+            return self.form_invalid(form)
+
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        ip = self.request.META.get("REMOTE_ADDR", "127.0.0.1")
+        cache_key = f"login_attempts_{ip}"
+        attempts = cache.get(cache_key, 0)
+        cache.set(cache_key, attempts + 1, 300)
+        return super().form_invalid(form)
+
     def form_valid(self, form):
+        ip = self.request.META.get("REMOTE_ADDR", "127.0.0.1")
+        cache_key = f"login_attempts_{ip}"
+        cache.delete(cache_key)
         response = super().form_valid(form)
         merge_guest_cart(self.request, self.request.user)
         return response
@@ -184,6 +213,16 @@ class ResendOTPView(View):
         if not pending_user_id:
             messages.error(request, "Please register first.")
             return redirect("accounts:register")
+
+        last_resend = request.session.get("last_otp_resend_time", 0)
+        now = time.time()
+        cooldown = 60
+        if now - last_resend < cooldown:
+            remaining = int(cooldown - (now - last_resend))
+            messages.error(request, f"Please wait {remaining} seconds before requesting a new code.")
+            return redirect("accounts:verify_otp")
+
+        request.session["last_otp_resend_time"] = now
         code = OTPVerification.generate_code()
         OTPVerification.objects.create(
             user_id=pending_user_id,
@@ -203,9 +242,67 @@ class PasswordResetRequestView(View):
         return render(request, self.template_name)
 
     def post(self, request):
-        # Standard Django PasswordResetView flow can be swapped in for production;
-        # kept as a simple stub here so the URL/template contract is stable.
+        email = request.POST.get("email", "").strip()
+        if email:
+            user = User.objects.filter(email__iexact=email, is_active=True).first()
+            if user:
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                reset_url = request.build_absolute_uri(
+                    reverse("accounts:password_reset_confirm", kwargs={"uidb64": uid, "token": token})
+                )
+                send_mail(
+                    subject="EternaAura — Password Reset Request",
+                    message=(
+                        f"Hello {user.first_name or user.username},\n\n"
+                        f"We received a request to reset your password on EternaAura.\n\n"
+                        f"Click the link below to set a new password:\n{reset_url}\n\n"
+                        f"If you did not request a password reset, please ignore this email."
+                    ),
+                    from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
         messages.success(request, "If that email exists, a reset link has been sent.")
+        return redirect("accounts:login")
+
+
+class PasswordResetConfirmView(View):
+    template_name = "accounts/password_reset_confirm.html"
+
+    def _get_user(self, uidb64):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            return User.objects.get(pk=uid, is_active=True)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return None
+
+    def get(self, request, uidb64, token):
+        user = self._get_user(uidb64)
+        validlink = bool(user and default_token_generator.check_token(user, token))
+        return render(request, self.template_name, {"validlink": validlink})
+
+    def post(self, request, uidb64, token):
+        user = self._get_user(uidb64)
+        if not user or not default_token_generator.check_token(user, token):
+            messages.error(request, "Invalid or expired password reset link.")
+            return render(request, self.template_name, {"validlink": False})
+
+        password1 = request.POST.get("password1", "").strip()
+        password2 = request.POST.get("password2", "").strip()
+
+        if not password1 or len(password1) < 8:
+            messages.error(request, "Password must be at least 8 characters long.")
+            return render(request, self.template_name, {"validlink": True})
+
+        if password1 != password2:
+            messages.error(request, "Passwords do not match.")
+            return render(request, self.template_name, {"validlink": True})
+
+        user.set_password(password1)
+        user.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Your password has been reset successfully. Please sign in with your new password.")
         return redirect("accounts:login")
 
 
@@ -232,7 +329,13 @@ class EditProfileView(NeverCacheLoginRequiredMixin, View):
         if action == "update_profile":
             user_form = UserProfileForm(request.POST, request.FILES, instance=request.user)
             if user_form.is_valid():
-                user_form.save()
+                old_email = request.user.email
+                user = user_form.save(commit=False)
+                if user.email != old_email:
+                    user.is_email_verified = False
+                    messages.info(request, "Email address changed. Please verify your new email address.")
+                user.save()
+                user_form.save_m2m()
                 messages.success(request, "Your profile information has been updated successfully.")
                 return redirect("accounts:profile_edit")
             else:

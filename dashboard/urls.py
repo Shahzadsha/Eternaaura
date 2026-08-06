@@ -25,6 +25,7 @@ urlpatterns = [
     path("banners/<int:pk>/delete/", views.BannerDeleteView.as_view(), name="banner_delete"),
 
     path("orders/", views.OrderManagementView.as_view(), name="orders"),
+    path("orders/<uuid:pk>/verify-payment/", views.VerifyPaymentView.as_view(), name="order_verify_payment"),
     path("analytics/", views.AnalyticsView.as_view(), name="analytics"),
     path("api/revenue-analytics/", views.DailyRevenueApiView.as_view(), name="revenue_analytics_api"),
 ]

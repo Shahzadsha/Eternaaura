@@ -71,19 +71,31 @@
             <div class="w-8 h-8 rounded-full bg-gold/15 text-gold-dark flex items-center justify-center font-serif text-lg font-bold shrink-0">📲</div>
             <div>
               <h2 class="font-serif text-lg sm:text-xl text-ink">Scan &amp; Pay</h2>
-              <p class="text-xs text-ink/60">UPI Instant Payment</p>
+              <p class="text-xs text-ink/60">Dynamic UPI Instant Payment</p>
             </div>
           </div>
 
-          <p class="text-xs sm:text-sm text-ink/70 mb-6 leading-relaxed">
-            Scan this QR code using any UPI app (Google Pay, PhonePe, Paytm, BHIM, etc.) to complete your payment.
+          <p class="text-xs sm:text-sm text-ink/70 mb-4 leading-relaxed">
+            Scan this unique QR code using any UPI app (Google Pay, PhonePe, Paytm, BHIM, etc.) or tap the button below to pay directly on mobile.
           </p>
 
-          <!-- QR Code Image Container -->
-          <div class="flex flex-col items-center justify-center p-4 sm:p-6 bg-cream/40 rounded-2xl border border-gold/30 mb-6 shadow-inner">
+          <!-- Dynamic QR Code Image Container -->
+          <div class="flex flex-col items-center justify-center p-4 sm:p-6 bg-cream/40 rounded-2xl border border-gold/30 mb-6 shadow-inner text-center">
             <div class="p-3 bg-white rounded-xl shadow-md border border-gold/20 mb-3 max-w-[200px] sm:max-w-[240px] aspect-square w-full">
-              <img src="{% static 'images/upi_qr.png' %}" alt="Scan & Pay UPI QR Code" class="w-full h-full object-contain rounded-lg">
+              <img src="{{ qr_preview_url }}" alt="Scan & Pay UPI QR Code" class="w-full h-full object-contain rounded-lg">
             </div>
+
+            <!-- Transaction Details & Mobile Deep Link -->
+            <div class="space-y-1.5 mb-3">
+              <p class="text-sm font-semibold text-ink">Payable Amount: <span class="text-gold-dark">₹{{ grand_total|floatformat:2 }}</span></p>
+              <p class="text-xs text-ink/70">UPI ID: <code class="bg-white px-2 py-0.5 rounded border border-ink/10 font-mono text-[11px] select-all">{{ merchant_upi_id }}</code></p>
+              <p class="text-[11px] text-ink/50">Transaction Ref: <span class="font-mono">{{ transaction_ref }}</span></p>
+            </div>
+
+            <a href="{{ upi_link }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gold/20 text-gold-dark rounded-xl text-xs font-semibold hover:bg-gold hover:text-ink transition-colors mb-3">
+              📲 Open &amp; Pay via UPI App
+            </a>
+
             <div class="flex flex-wrap justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-gold-dark font-medium uppercase tracking-wider text-center">
               <span>✦ Google Pay</span> • <span>PhonePe</span> • <span>Paytm</span> • <span>BHIM ✦</span>
             </div>
@@ -96,7 +108,7 @@
                      onchange="document.getElementById('place_order_btn').disabled = !this.checked;"
                      class="mt-1 w-4 h-4 rounded border-gold text-gold focus:ring-gold accent-gold shrink-0">
               <span class="text-xs sm:text-sm font-medium text-ink leading-snug">
-                I have completed the payment
+                I have completed the payment via UPI. (Order status will be set to Pending Staff Verification)
               </span>
             </label>
           </div>
