@@ -52,20 +52,20 @@ class CatalogFlowTests(TestCase):
     def test_ajax_wishlist_toggle(self):
         url = reverse("catalog:toggle_wishlist", kwargs={"product_id": self.product.id})
 
-        # Unauthenticated request -> 401 JSON redirect
-        res_unauth = self.client.post(url)
+        # Unauthenticated AJAX request -> 401 JSON redirect
+        res_unauth = self.client.post(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(res_unauth.status_code, 401)
 
-        # Authenticated request -> toggle ON
+        # Authenticated AJAX request -> toggle ON
         self.client.login(username="catalogcustomer@eternaaura.com", password="SecurePassword123!")
-        res_on = self.client.post(url)
+        res_on = self.client.post(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(res_on.status_code, 200)
         self.assertEqual(res_on.json()["count"], 1)
         self.assertTrue(res_on.json()["wishlisted"])
         self.assertEqual(Wishlist.objects.filter(user=self.user).count(), 1)
 
-        # Authenticated request -> toggle OFF
-        res_off = self.client.post(url)
+        # Authenticated AJAX request -> toggle OFF
+        res_off = self.client.post(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(res_off.status_code, 200)
         self.assertEqual(res_off.json()["count"], 0)
         self.assertFalse(res_off.json()["wishlisted"])

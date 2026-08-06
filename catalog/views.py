@@ -153,15 +153,37 @@ class SearchView(ListView):
 
 class ToggleWishlistView(View):
 
+    def _is_ajax(self, request):
+        return (
+            request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            or request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+        )
+
     def post(self, request, product_id):
         referer = request.META.get("HTTP_REFERER", reverse("catalog:home"))
+
         if not request.user.is_authenticated:
+            if self._is_ajax(request):
+                return JsonResponse(
+                    {"authenticated": False, "login_url": f"{reverse('accounts:login')}?next={referer}"},
+                    status=401,
+                )
             return redirect(f"{reverse('accounts:login')}?next={referer}")
 
         product = get_object_or_404(Product, pk=product_id)
         item, created = Wishlist.objects.get_or_create(user=request.user, product=product)
         if not created:
             item.delete()
+
+        if self._is_ajax(request):
+            wishlist_count = Wishlist.objects.filter(user=request.user).count()
+            return JsonResponse({
+                "authenticated": True,
+                "wishlisted": created,
+                "wishlist_count": wishlist_count,
+                "count": wishlist_count,
+                "product_id": str(product.id),
+            })
 
         return redirect(referer)
 
