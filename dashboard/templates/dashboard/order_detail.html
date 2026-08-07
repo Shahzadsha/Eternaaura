@@ -1,0 +1,117 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+  <div class="flex items-center gap-3">
+    <a href="{% url 'dashboard:orders' %}" class="text-xs text-gold hover:text-gold-light">← Back to Orders</a>
+    <h2 class="font-serif text-xl text-white font-bold">Order #{{ order.order_number }}</h2>
+    <span class="px-2.5 py-1 rounded-full text-xs font-semibold uppercase
+      {% if order.status == 'delivered' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+      {% elif order.status == 'cancelled' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
+      {% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+      {{ order.get_status_display }}
+    </span>
+  </div>
+  <span class="text-xs text-gray-400">Placed on {{ order.placed_at|date:"d M Y, H:i" }}</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Left Column: Status Update & Order Items -->
+  <div class="lg:col-span-2 space-y-6">
+    <!-- Status Update Form Card -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+      <h3 class="font-serif text-base text-white font-medium mb-4">Update Order Status</h3>
+      <form action="{% url 'dashboard:order_update_status' order.id %}" method="post" class="flex flex-wrap items-end gap-4">
+        {% csrf_token %}
+        <div class="flex-1 min-w-[180px]">
+          <label class="block text-xs text-gray-400 mb-1">Status</label>
+          <select name="status" class="w-full bg-panel2 border border-white/15 rounded-lg px-3 py-2 text-xs text-gray-100 focus:outline-none focus:border-gold">
+            {% for code, label in statuses %}
+              <option value="{{ code }}" {% if order.status == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-xs text-gray-400 mb-1">Tracking Number</label>
+          <input type="text" name="tracking_number" value="{{ order.tracking_number }}" placeholder="e.g. AWB-98765432"
+                 class="w-full bg-panel2 border border-white/15 rounded-lg px-3 py-2 text-xs text-gray-100 focus:outline-none focus:border-gold">
+        </div>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition">
+          Update Order
+        </button>
+      </form>
+    </div>
+
+    <!-- Order Items List -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+      <h3 class="font-serif text-base text-white font-medium mb-4">Ordered Items ({{ order.items.count }})</h3>
+      <div class="divide-y divide-white/5">
+        {% for item in order.items.all %}
+          <div class="py-3 flex items-center justify-between gap-4 text-xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-panel2 border border-white/10 flex items-center justify-center overflow-hidden">
+                {% if item.product.images.first %}
+                  <img src="{{ item.product.images.first.image.url }}" class="w-full h-full object-cover">
+                {% else %}
+                  <span class="text-gold">✦</span>
+                {% endif %}
+              </div>
+              <div>
+                <p class="font-medium text-white">{{ item.product_name_snapshot }}</p>
+                <p class="text-[10px] text-gray-500">SKU: {{ item.product.sku }} | Quantity: {{ item.quantity }}</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-gray-200 font-medium">₹{{ item.unit_price_snapshot }} × {{ item.quantity }}</p>
+              <p class="text-gold-light font-bold">₹{{ item.line_total }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="border-t border-white/10 pt-4 mt-4 text-xs space-y-1.5 text-right">
+        <div class="flex justify-between text-gray-400"><span>Subtotal:</span><span>₹{{ order.subtotal }}</span></div>
+        <div class="flex justify-between text-gray-400"><span>Discount:</span><span class="text-emerald-400">-₹{{ order.discount_total }}</span></div>
+        <div class="flex justify-between text-gray-400"><span>Shipping:</span><span>₹{{ order.shipping_fee }}</span></div>
+        <div class="flex justify-between text-white font-bold text-sm pt-2 border-t border-white/10"><span>Grand Total:</span><span class="text-gold-light">₹{{ order.grand_total }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Customer & Shipping Details -->
+  <div class="space-y-6">
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl text-xs space-y-3">
+      <h3 class="font-serif text-base text-white font-medium border-b border-white/10 pb-3">Customer Information</h3>
+      <p><span class="text-gray-400">Name:</span> <strong class="text-white">{{ order.user.get_full_name|default:order.user.username }}</strong></p>
+      <p><span class="text-gray-400">Email:</span> <span class="text-gray-200">{{ order.user.email }}</span></p>
+      <p><span class="text-gray-400">Phone:</span> <span class="text-gray-200">{{ order.shipping_address.phone_number }}</span></p>
+    </div>
+
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl text-xs space-y-3">
+      <h3 class="font-serif text-base text-white font-medium border-b border-white/10 pb-3">Shipping Address</h3>
+      <p class="text-gray-200 font-medium">{{ order.shipping_address.full_name }}</p>
+      <p class="text-gray-400">{{ order.shipping_address.line1 }} {% if order.shipping_address.line2 %}, {{ order.shipping_address.line2 }}{% endif %}</p>
+      <p class="text-gray-400">{{ order.shipping_address.city }}, {{ order.shipping_address.state }} — {{ order.shipping_address.postal_code }}</p>
+    </div>
+
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl text-xs space-y-3">
+      <h3 class="font-serif text-base text-white font-medium border-b border-white/10 pb-3">Payment Method</h3>
+      <p><span class="text-gray-400">Method:</span> <strong class="text-gold-light uppercase">{{ order.payments.first.get_gateway_display|default:"N/A" }}</strong></p>
+      {% for p in order.payments.all %}
+        <div class="p-2.5 rounded bg-panel2 border border-white/5 space-y-1">
+          <p><span class="text-gray-400">Txn Ref:</span> <span class="font-mono text-gray-200">{{ p.transaction_ref|default:"Pending" }}</span></p>
+          <p><span class="text-gray-400">Status:</span> <span class="font-bold text-gold">{{ p.get_status_display }}</span></p>
+        </div>
+      {% endfor %}
+      {% if order.status == 'pending' %}
+        <form action="{% url 'dashboard:order_verify_payment' order.id %}" method="post" class="pt-2">
+          {% csrf_token %}
+          <button type="submit" class="w-full py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition">
+            Verify Payment Manually
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

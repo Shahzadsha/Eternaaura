@@ -25,7 +25,7 @@ class StaffAreaAccessMiddleware:
         if (normalized_path.startswith(self.prefix) or path == self.prefix_without_slash) and path != login_path and path != login_path.rstrip("/"):
             if not request.user.is_authenticated:
                 return redirect(f"{login_path}?next={path}")
-            if not request.user.is_staff:
+            if not (request.user.is_staff or request.user.is_superuser):
                 return redirect("catalog:home")
 
         return self.get_response(request)

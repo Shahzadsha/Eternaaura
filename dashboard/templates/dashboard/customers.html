@@ -1,0 +1,57 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Customer Management{% endblock %}
+
+{% block content %}
+<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
+    <h2 class="font-serif text-lg text-white font-medium">Registered Store Customers</h2>
+    <form method="get" class="flex items-center gap-2 w-full sm:w-auto">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search customer name, email..."
+             class="bg-panel2 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-gray-100 focus:outline-none focus:border-gold w-full sm:w-64">
+      <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition">Search</button>
+    </form>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs">
+      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+        <tr>
+          <th class="py-3 px-3">Customer</th>
+          <th class="py-3 px-3">Email</th>
+          <th class="py-3 px-3">Phone</th>
+          <th class="py-3 px-3">Total Orders</th>
+          <th class="py-3 px-3">Total Spent</th>
+          <th class="py-3 px-3">Status</th>
+          <th class="py-3 px-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for c in customers %}
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3">
+              <a href="{% url 'dashboard:customer_detail' c.id %}" class="text-gold-light font-medium hover:underline">
+                {{ c.get_full_name|default:c.username }}
+              </a>
+            </td>
+            <td class="py-3 px-3 text-gray-300">{{ c.email }}</td>
+            <td class="py-3 px-3 text-gray-400">{{ c.phone_number|default:"N/A" }}</td>
+            <td class="py-3 px-3 font-semibold text-white">{{ c.total_orders }}</td>
+            <td class="py-3 px-3 text-gold-light font-bold">₹{{ c.total_spent|default:0 }}</td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                {% if c.is_active %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% endif %}">
+                {% if c.is_active %}Active{% else %}Blocked{% endif %}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-right">
+              <a href="{% url 'dashboard:customer_detail' c.id %}" class="text-gold hover:underline font-medium">View Profile</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="py-8 text-center text-gray-500">No customers found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

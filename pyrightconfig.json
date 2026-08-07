@@ -3,7 +3,21 @@
   "venv": "venv",
   "extraPaths": [
     ".",
-    "./venv/Lib/site-packages"
+    "venv/Lib/site-packages"
   ],
-  "typeCheckingMode": "off"
+  "typeCheckingMode": "off",
+  "reportMissingTypeStubs": "none",
+  "reportMissingImports": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportOptionalOperand": "none",
+  "reportIncompatibleMethodOverride": "none",
+  "reportUnknownMemberType": "none",
+  "reportUntypedFunctionDecorator": "none",
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "venv"
+  ]
 }

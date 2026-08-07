@@ -95,6 +95,10 @@ class ReturnRequest(models.Model):
     requested_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
 
+    @property
+    def order(self):
+        return self.order_item.order
+
 
 class Invoice(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="invoice")

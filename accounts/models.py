@@ -26,17 +26,6 @@ class User(AbstractUser):
 
 
 
-    # Staff role granularity used by the dashboard RBAC system (Phase 5)
-    class StaffRole(models.TextChoices):
-        NONE = "none", "Not staff"
-        SUPER_ADMIN = "super_admin", "Super Admin"
-        PRODUCT_MANAGER = "product_manager", "Product Manager"
-        ORDER_MANAGER = "order_manager", "Order Manager"
-        CUSTOMER_SUPPORT = "customer_support", "Customer Support"
-        CONTENT_MANAGER = "content_manager", "Content Manager"
-        MARKETING_MANAGER = "marketing_manager", "Marketing Manager"
-
-    staff_role = models.CharField(max_length=20, choices=StaffRole.choices, default=StaffRole.NONE)
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=64, blank=True)
 

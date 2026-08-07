@@ -1,0 +1,56 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Reviews &amp; Ratings Moderation{% endblock %}
+
+{% block content %}
+<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
+  <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+    <h2 class="font-serif text-lg text-white font-medium">Product Reviews</h2>
+    <span class="text-xs text-gray-400">Total Reviews: {{ reviews.paginator.count }}</span>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs">
+      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+        <tr>
+          <th class="py-3 px-3">Product</th>
+          <th class="py-3 px-3">Customer</th>
+          <th class="py-3 px-3">Rating</th>
+          <th class="py-3 px-3">Review</th>
+          <th class="py-3 px-3">Status</th>
+          <th class="py-3 px-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for r in reviews %}
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3 text-white font-medium line-clamp-1">{{ r.product.name }}</td>
+            <td class="py-3 px-3 text-gray-300">{{ r.user.get_full_name|default:r.user.username }}</td>
+            <td class="py-3 px-3 font-bold text-amber-400">{{ r.rating }} ★</td>
+            <td class="py-3 px-3 text-gray-400 max-w-sm">
+              <p class="font-semibold text-gray-200">{{ r.title }}</p>
+              <p class="truncate text-[11px]">{{ r.body }}</p>
+            </td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                {% if r.is_approved %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+                {% if r.is_approved %}Approved{% else %}Pending{% endif %}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-right space-x-2">
+              <form action="{% url 'dashboard:review_toggle_approve' r.id %}" method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-gold hover:underline font-medium">
+                  {% if r.is_approved %}Unapprove{% else %}Approve{% endif %}
+                </button>
+              </form>
+              <a href="{% url 'dashboard:review_delete' r.id %}" class="text-rose-400 hover:underline">Delete</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="py-8 text-center text-gray-500">No product reviews submitted yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

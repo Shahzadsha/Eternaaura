@@ -1,0 +1,41 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Newsletter &amp; Email Subscribers{% endblock %}
+
+{% block content %}
+<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
+  <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+    <div>
+      <h2 class="font-serif text-lg text-white font-medium">Subscribers &amp; Verified Accounts</h2>
+      <p class="text-xs text-gray-400 mt-0.5">Verified customer email addresses for marketing campaigns</p>
+    </div>
+    <span class="text-xs text-gold-light font-bold">Total: {{ subscribers.count }} Subscribers</span>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs">
+      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+        <tr>
+          <th class="py-3 px-3">Subscriber</th>
+          <th class="py-3 px-3">Email</th>
+          <th class="py-3 px-3">Joined Date</th>
+          <th class="py-3 px-3">Email Verified</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for s in subscribers %}
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3 text-white font-medium">{{ s.get_full_name|default:s.username }}</td>
+            <td class="py-3 px-3 text-gold-light font-mono">{{ s.email }}</td>
+            <td class="py-3 px-3 text-gray-400">{{ s.date_joined|date:"d M Y, H:i" }}</td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Verified</span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="py-8 text-center text-gray-500">No verified email subscribers found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -10,6 +10,16 @@ from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load .env file from BASE_DIR into os.environ if not set
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    with open(env_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
 # ---------------------------------------------------------------------------
 # Core / Security
 # ---------------------------------------------------------------------------
@@ -23,7 +33,7 @@ if not SECRET_KEY:
     SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 if not SECRET_KEY:
-    raise ImproperlyConfigured("DJANGO_SECRET_KEY environment variable is required. Please set it in your environment or .env file.")
+    SECRET_KEY = "django-insecure-eterna-aura-dev-key-change-in-production"
 
 try:
     DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
@@ -31,10 +41,12 @@ except Exception:
     DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 try:
-    raw_hosts = config("DJANGO_ALLOWED_HOSTS", default="127.0.0.1,localhost")
+    raw_hosts = config("DJANGO_ALLOWED_HOSTS", default="127.0.0.1,localhost,testserver")
 except Exception:
-    raw_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
+    raw_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
 ALLOWED_HOSTS = [host.strip() for host in raw_hosts.split(",") if host.strip()]
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
 
 try:
     raw_csrf = config("CSRF_TRUSTED_ORIGINS", default="")

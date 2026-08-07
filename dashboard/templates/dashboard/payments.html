@@ -1,0 +1,49 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Payments &amp; Transactions{% endblock %}
+
+{% block content %}
+<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+  <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+    <h2 class="font-serif text-lg text-white font-medium">Payment Log</h2>
+    <span class="text-xs text-gray-400">Total Payments: {{ payments.paginator.count }}</span>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs">
+      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+        <tr>
+          <th class="py-3 px-3">Transaction ID</th>
+          <th class="py-3 px-3">Order</th>
+          <th class="py-3 px-3">Customer</th>
+          <th class="py-3 px-3">Method</th>
+          <th class="py-3 px-3">Amount</th>
+          <th class="py-3 px-3">Status</th>
+          <th class="py-3 px-3">Date</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for p in payments %}
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3 font-mono text-gold-light">{{ p.transaction_id|default:"N/A" }}</td>
+            <td class="py-3 px-3"><a href="{% url 'dashboard:order_detail' p.order.id %}" class="text-gold hover:underline">#{{ p.order.order_number }}</a></td>
+            <td class="py-3 px-3 text-gray-200">{{ p.order.user.get_full_name|default:p.order.user.username }}</td>
+            <td class="py-3 px-3 uppercase font-medium text-gray-300">{{ p.gateway }}</td>
+            <td class="py-3 px-3 text-white font-bold">₹{{ p.amount }}</td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                {% if p.status == 'success' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                {% elif p.status == 'failed' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
+                {% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+                {{ p.get_status_display }}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-gray-400">{{ p.created_at|date:"d M Y, H:i" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="py-8 text-center text-gray-500">No payment logs found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

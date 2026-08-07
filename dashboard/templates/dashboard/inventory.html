@@ -1,0 +1,62 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Inventory &amp; Stock Control{% endblock %}
+
+{% block content %}
+<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
+    <div>
+      <h2 class="font-serif text-lg text-white font-medium">Inventory &amp; Stock Levels</h2>
+      <p class="text-xs text-gray-400 mt-0.5">Quickly update stock quantities for all catalogue items</p>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <a href="{% url 'dashboard:inventory' %}" class="px-3 py-1.5 rounded-lg border border-white/15 text-gray-300 hover:bg-white/5">All Stock</a>
+      <a href="{% url 'dashboard:inventory' %}?filter=low_stock" class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">Low Stock (≤5)</a>
+      <a href="{% url 'dashboard:inventory' %}?filter=out_of_stock" class="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 font-medium">Out of Stock (0)</a>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs">
+      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+        <tr>
+          <th class="py-3 px-3">Product Name</th>
+          <th class="py-3 px-3">SKU</th>
+          <th class="py-3 px-3">Category</th>
+          <th class="py-3 px-3">Price</th>
+          <th class="py-3 px-3">Stock Quantity</th>
+          <th class="py-3 px-3 text-right">Quick Stock Update</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for p in products %}
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3 text-white font-medium">{{ p.name }}</td>
+            <td class="py-3 px-3 font-mono text-gray-400">{{ p.sku }}</td>
+            <td class="py-3 px-3 text-gray-300">{{ p.category.name|default:"Uncategorized" }}</td>
+            <td class="py-3 px-3 text-gold-light font-bold">₹{{ p.price }}</td>
+            <td class="py-3 px-3">
+              <span class="px-2.5 py-1 rounded text-xs font-bold
+                {% if p.stock_quantity == 0 %}bg-red-500/20 text-red-400 border border-red-500/30
+                {% elif p.stock_quantity <= 5 %}bg-amber-500/20 text-amber-300 border border-amber-500/30
+                {% else %}bg-emerald-500/20 text-emerald-300{% endif %}">
+                {{ p.stock_quantity }} units
+              </span>
+            </td>
+            <td class="py-3 px-3 text-right">
+              <form action="{% url 'dashboard:inventory' %}" method="post" class="inline-flex items-center justify-end gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ p.id }}">
+                <input type="number" name="stock_quantity" value="{{ p.stock_quantity }}" min="0"
+                       class="w-20 bg-panel2 border border-white/15 rounded px-2 py-1 text-center text-xs text-white focus:outline-none focus:border-gold">
+                <button type="submit" class="px-2.5 py-1 rounded bg-gold hover:bg-gold-dark text-black font-semibold text-[11px] transition">Save</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="py-8 text-center text-gray-500">No products found matching stock filter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

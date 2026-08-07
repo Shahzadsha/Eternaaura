@@ -5,10 +5,10 @@ from .models import Address, OTPVerification, User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "email", "is_staff", "staff_role", "is_email_verified")
-    list_filter = UserAdmin.list_filter + ("staff_role", "is_email_verified")
+    list_display = ("username", "email", "is_staff", "is_superuser", "is_email_verified")
+    list_filter = UserAdmin.list_filter + ("is_email_verified",)
     fieldsets = UserAdmin.fieldsets + (
-        ("ETERNAAURA", {"fields": ("phone_number", "staff_role", "two_factor_enabled", "is_email_verified", "is_phone_verified")}),
+        ("ETERNAAURA", {"fields": ("phone_number", "two_factor_enabled", "is_email_verified", "is_phone_verified")}),
     )
 
 

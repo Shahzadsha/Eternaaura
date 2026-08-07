@@ -1,0 +1,65 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Reports &amp; Data Exports{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+  <div class="bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl">
+    <h2 class="font-serif text-xl text-white font-bold mb-2">Executive Reports &amp; Data Exports</h2>
+    <p class="text-xs text-gray-400 mb-6">Download detailed spreadsheet exports or executive PDF reports</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Excel Orders -->
+      <div class="p-5 rounded-xl bg-panel2 border border-white/10 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-gold font-bold text-sm mb-1">
+            <span>📊 Orders Report (.xlsx)</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-4">Export complete orders, customer names, dates, statuses, and grand totals to Excel.</p>
+        </div>
+        <a href="{% url 'dashboard:reports_export_orders' %}" class="w-full py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-center text-xs transition">
+          Download Orders Excel
+        </a>
+      </div>
+
+      <!-- Excel Products -->
+      <div class="p-5 rounded-xl bg-panel2 border border-white/10 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-gold font-bold text-sm mb-1">
+            <span>💎 Products &amp; Inventory (.xlsx)</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-4">Export product list, SKUs, category mappings, prices, and current stock quantities.</p>
+        </div>
+        <a href="{% url 'dashboard:reports_export_products' %}" class="w-full py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-center text-xs transition">
+          Download Inventory Excel
+        </a>
+      </div>
+
+      <!-- Excel Customers -->
+      <div class="p-5 rounded-xl bg-panel2 border border-white/10 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-gold font-bold text-sm mb-1">
+            <span>👥 Customers Directory (.xlsx)</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-4">Export customer contact details, registration dates, order counts, and lifetime value.</p>
+        </div>
+        <a href="{% url 'dashboard:reports_export_customers' %}" class="w-full py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-center text-xs transition">
+          Download Customers Excel
+        </a>
+      </div>
+
+      <!-- Executive PDF Report -->
+      <div class="p-5 rounded-xl bg-panel2 border border-gold/30 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-gold-light font-bold text-sm mb-1">
+            <span>📄 Executive Sales Report (.pdf)</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-4">Generate printable PDF executive sales summary with high-level KPI breakdowns.</p>
+        </div>
+        <a href="{% url 'dashboard:reports_pdf_sales' %}" class="w-full py-2 rounded-lg bg-gold-light hover:bg-gold text-black font-semibold text-center text-xs transition">
+          Generate PDF Sales Summary
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

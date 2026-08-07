@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Collections Management{% endblock %}
+
+{% block content %}
+<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
+  <div class="flex items-center justify-between border-b border-white/10 pb-6 mb-6">
+    <h2 class="font-serif text-lg text-white font-medium">Jewellery Collections</h2>
+    <a href="{% url 'dashboard:collection_create' %}" class="px-4 py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition">
+      + New Collection
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs">
+      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+        <tr>
+          <th class="py-3 px-3">Collection Name</th>
+          <th class="py-3 px-3">Slug</th>
+          <th class="py-3 px-3">Products Count</th>
+          <th class="py-3 px-3">Featured</th>
+          <th class="py-3 px-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for c in collections %}
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3 text-white font-medium">{{ c.name }}</td>
+            <td class="py-3 px-3 font-mono text-gray-400">{{ c.slug }}</td>
+            <td class="py-3 px-3 text-gold-light font-bold">{{ c.product_count }}</td>
+            <td class="py-3 px-3">
+              {% if c.is_featured %}<span class="px-2 py-0.5 rounded bg-gold/20 text-gold-light font-bold">Featured</span>{% else %}<span class="text-gray-500">Standard</span>{% endif %}
+            </td>
+            <td class="py-3 px-3 text-right space-x-2">
+              <a href="{% url 'dashboard:collection_edit' c.id %}" class="text-gold hover:underline">Edit</a>
+              <a href="{% url 'dashboard:collection_delete' c.id %}" class="text-rose-400 hover:underline">Delete</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="py-8 text-center text-gray-500">No collections created yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Customer Profile — {{ customer.get_full_name|default:customer.username }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+  <div class="flex items-center gap-3">
+    <a href="{% url 'dashboard:customers' %}" class="text-xs text-gold hover:text-gold-light">← Back to Customers</a>
+    <h2 class="font-serif text-xl text-white font-bold">{{ customer.get_full_name|default:customer.username }}</h2>
+    <span class="px-2.5 py-1 rounded-full text-xs font-semibold uppercase
+      {% if customer.is_active %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% endif %}">
+      {% if customer.is_active %}Active Account{% else %}Blocked Account{% endif %}
+    </span>
+  </div>
+  <form action="{% url 'dashboard:customer_toggle_active' customer.id %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="px-3.5 py-1.5 rounded-lg font-semibold text-xs transition
+      {% if customer.is_active %}bg-rose-600/80 hover:bg-rose-700 text-white{% else %}bg-emerald-600/80 hover:bg-emerald-700 text-white{% endif %}">
+      {% if customer.is_active %}Deactivate / Block Account{% else %}Activate Account{% endif %}
+    </button>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  <!-- Profile & Address Column -->
+  <div class="space-y-6">
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl text-xs space-y-3">
+      <h3 class="font-serif text-base text-white font-medium border-b border-white/10 pb-3">Personal Details</h3>
+      <p><span class="text-gray-400">Username:</span> <span class="text-white font-medium">{{ customer.username }}</span></p>
+      <p><span class="text-gray-400">Email:</span> <span class="text-gray-200">{{ customer.email }}</span></p>
+      <p><span class="text-gray-400">Phone:</span> <span class="text-gray-200">{{ customer.phone_number|default:"Not provided" }}</span></p>
+      <p><span class="text-gray-400">Gender:</span> <span class="text-gray-200 capitalize">{{ customer.gender }}</span></p>
+      <p><span class="text-gray-400">Registered:</span> <span class="text-gray-400">{{ customer.date_joined|date:"d M Y, H:i" }}</span></p>
+    </div>
+
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl text-xs space-y-3">
+      <h3 class="font-serif text-base text-white font-medium border-b border-white/10 pb-3">Saved Addresses ({{ addresses.count }})</h3>
+      {% for a in addresses %}
+        <div class="p-3 rounded bg-panel2 border border-white/5 space-y-1">
+          <p class="font-medium text-white">{{ a.full_name }} <span class="text-[10px] text-gold uppercase">({{ a.address_type }})</span></p>
+          <p class="text-gray-400">{{ a.line1 }} {% if a.line2 %}, {{ a.line2 }}{% endif %}</p>
+          <p class="text-gray-400">{{ a.city }}, {{ a.state }} — {{ a.postal_code }}</p>
+          <p class="text-gray-500">Phone: {{ a.phone_number }}</p>
+        </div>
+      {% empty %}
+        <p class="text-gray-500 py-2">No addresses saved.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Order & Wishlist History (2 cols) -->
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+      <h3 class="font-serif text-base text-white font-medium border-b border-white/10 pb-4 mb-4">Order History ({{ orders.count }})</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+            <tr>
+              <th class="py-2.5 px-2">Order #</th>
+              <th class="py-2.5 px-2">Date</th>
+              <th class="py-2.5 px-2">Total</th>
+              <th class="py-2.5 px-2">Status</th>
+              <th class="py-2.5 px-2 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            {% for o in orders %}
+              <tr class="hover:bg-white/5 transition">
+                <td class="py-3 px-2 font-mono text-gold-light">#{{ o.order_number }}</td>
+                <td class="py-3 px-2 text-gray-400">{{ o.placed_at|date:"d M Y" }}</td>
+                <td class="py-3 px-2 text-white font-bold">₹{{ o.grand_total }}</td>
+                <td class="py-3 px-2">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                    {% if o.status == 'delivered' %}bg-emerald-500/20 text-emerald-300
+                    {% elif o.status == 'cancelled' %}bg-rose-500/20 text-rose-300
+                    {% else %}bg-amber-500/20 text-amber-300{% endif %}">
+                    {{ o.get_status_display }}
+                  </span>
+                </td>
+                <td class="py-3 px-2 text-right">
+                  <a href="{% url 'dashboard:order_detail' o.id %}" class="text-gold hover:underline">View</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="py-6 text-center text-gray-500">No orders placed by this customer.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Wishlist Items -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+      <h3 class="font-serif text-base text-white font-medium border-b border-white/10 pb-4 mb-4">Wishlist Items ({{ wishlist_items.count }})</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        {% for w in wishlist_items %}
+          <div class="p-3 rounded bg-panel2 border border-white/5 flex items-center justify-between">
+            <span class="text-white font-medium line-clamp-1">{{ w.product.name }}</span>
+            <span class="text-gold-light font-bold">₹{{ w.product.price }}</span>
+          </div>
+        {% empty %}
+          <p class="text-gray-500 py-2 col-span-full">Wishlist is empty.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

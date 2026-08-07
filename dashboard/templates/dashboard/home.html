@@ -1,43 +1,84 @@
 {% extends "dashboard/base.html" %}
-{% block page_title %}Overview{% endblock %}
-
-{% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-{% endblock %}
+{% block page_title %}Overview &amp; Executive Summary{% endblock %}
 
 {% block content %}
-<!-- Metric Cards -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
-    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Total Products</p>
-    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">{{ total_products }}</p>
+<!-- Quick Action Buttons Header -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6 sm:mb-8 bg-panel border border-white/10 rounded-2xl p-4 sm:p-5">
+  <div>
+    <h2 class="font-serif text-lg text-white font-medium">Welcome back, {{ user.get_full_name|default:user.username }}</h2>
+    <p class="text-xs text-gray-400 mt-0.5">Centralized store control &amp; real-time performance summary</p>
   </div>
-  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
-    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Orders Today</p>
-    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">{{ orders_today }}</p>
-  </div>
-  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
-    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Revenue Today</p>
-    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">₹{{ revenue_today|floatformat:2 }}</p>
-  </div>
-  <div class="bg-panel border border-white/10 rounded-xl p-4 sm:p-5 shadow-sm">
-    <p class="text-[11px] sm:text-xs uppercase tracking-wide text-gray-400 font-medium">Low Stock Items</p>
-    <p class="text-2xl sm:text-3xl font-serif text-gold-light mt-1 sm:mt-2">{{ low_stock_products.count }}</p>
+  <div class="flex flex-wrap items-center gap-2 text-xs">
+    <a href="{% url 'dashboard:product_create' %}" class="px-3.5 py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold transition flex items-center gap-1.5 shadow">
+      <span>+ Add Product</span>
+    </a>
+    <a href="{% url 'dashboard:category_create' %}" class="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-gold-light font-medium transition flex items-center gap-1.5 border border-gold/30">
+      <span>+ Category</span>
+    </a>
+    <a href="{% url 'dashboard:coupon_create' %}" class="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-gold-light font-medium transition flex items-center gap-1.5 border border-gold/30">
+      <span>+ Coupon</span>
+    </a>
+    <a href="{% url 'dashboard:banner_create' %}" class="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-gold-light font-medium transition flex items-center gap-1.5 border border-gold/30">
+      <span>+ Banner</span>
+    </a>
   </div>
 </div>
 
+<!-- 11 KPI Cards Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4 mb-8">
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Total Products</p>
+    <p class="text-2xl font-serif text-gold-light font-bold mt-1.5">{{ total_products }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Total Customers</p>
+    <p class="text-2xl font-serif text-gold-light font-bold mt-1.5">{{ total_customers }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Orders Today</p>
+    <p class="text-2xl font-serif text-gold-light font-bold mt-1.5">{{ orders_today }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-amber-400/90 font-medium">Pending Orders</p>
+    <p class="text-2xl font-serif text-amber-300 font-bold mt-1.5">{{ pending_orders }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-emerald-400/90 font-medium">Completed Orders</p>
+    <p class="text-2xl font-serif text-emerald-300 font-bold mt-1.5">{{ completed_orders }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-rose-400/90 font-medium">Cancelled Orders</p>
+    <p class="text-2xl font-serif text-rose-300 font-bold mt-1.5">{{ cancelled_orders }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Revenue Today</p>
+    <p class="text-xl font-serif text-gold-light font-bold mt-1.5">₹{{ revenue_today|floatformat:2 }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Monthly Revenue</p>
+    <p class="text-xl font-serif text-gold-light font-bold mt-1.5">₹{{ monthly_revenue|floatformat:2 }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Yearly Revenue</p>
+    <p class="text-xl font-serif text-gold-light font-bold mt-1.5">₹{{ yearly_revenue|floatformat:2 }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition">
+    <p class="text-[11px] uppercase tracking-wider text-amber-400/90 font-medium">Low Stock Products</p>
+    <p class="text-2xl font-serif text-amber-300 font-bold mt-1.5">{{ low_stock_count }}</p>
+  </div>
+  <div class="bg-panel border border-white/10 rounded-xl p-4 shadow-sm hover:border-gold/30 transition col-span-2 sm:col-span-1">
+    <p class="text-[11px] uppercase tracking-wider text-red-400/90 font-medium">Out-of-Stock</p>
+    <p class="text-2xl font-serif text-red-400 font-bold mt-1.5">{{ out_of_stock_count }}</p>
+  </div>
+</div>
 
-<!-- Daily Revenue Analysis Section -->
+<!-- Daily Revenue Analysis Chart -->
 <div class="bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl mb-8">
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-gold/15 text-gold-light flex items-center justify-center font-serif text-xl font-bold">📊</div>
-      <div>
-        <h2 class="font-serif text-xl text-white font-semibold">Daily Revenue Analysis</h2>
-        <p class="text-xs text-gray-400 mt-0.5">Histogram of daily revenue earned with horizontal mean average revenue line overlay</p>
-      </div>
+    <div>
+      <h2 class="font-serif text-xl text-white font-semibold">Revenue Performance &amp; Order Trends</h2>
+      <p class="text-xs text-gray-400 mt-0.5">Daily sales revenue histogram with mean average baseline</p>
     </div>
-
     <div class="flex items-center gap-3">
       <label for="overviewRangeSelect" class="text-xs text-gray-400 font-medium">Period:</label>
       <select id="overviewRangeSelect" class="bg-panel2 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-gold">
@@ -48,75 +89,116 @@
     </div>
   </div>
 
-  <div class="relative min-h-[300px] flex items-center justify-center">
+  <div class="relative min-h-[280px] flex items-center justify-center">
     <div id="overviewSpinner" class="absolute inset-0 bg-panel/80 flex flex-col items-center justify-center z-10">
       <div class="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mb-2"></div>
       <p class="text-xs text-gray-400">Loading daily revenue metrics...</p>
-    </div>
-
-    <div id="overviewEmptyState" class="hidden w-full py-12 text-center border border-dashed border-white/10 rounded-xl bg-panel2/40 p-6">
-      <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gold/10 flex items-center justify-center text-gold-light text-xl font-serif">📈</div>
-      <p class="font-serif text-base text-white mb-1">No Revenue Recorded Yet</p>
-      <p class="text-xs text-gray-400 max-w-sm mx-auto">Revenue bars and average line will render automatically when confirmed orders are placed.</p>
     </div>
 
     <div id="overviewChartWrapper" class="w-full h-72">
       <canvas id="overviewRevenueChart"></canvas>
     </div>
   </div>
-
-  <div class="mt-4 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-4 text-xs text-gray-400">
-    <div class="flex items-center gap-6">
-      <div class="flex items-center gap-2">
-        <span class="w-3.5 h-3.5 rounded bg-gold/80 border border-gold inline-block"></span>
-        <span>Daily Revenue (₹)</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="w-5 h-0.5 bg-amber-200 border-t-2 border-dashed border-amber-300 inline-block"></span>
-        <span class="font-medium text-amber-200">Average Daily Revenue (₹)</span>
-      </div>
-    </div>
-  </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <div class="bg-panel border border-white/10 rounded-xl p-6">
-    <h2 class="font-serif text-white mb-4">Orders by Status</h2>
-    <ul class="space-y-2 text-sm">
-      {% for row in orders_by_status %}
-        <li class="flex justify-between border-b border-white/5 pb-2">
-          <span class="capitalize text-gray-300">{{ row.status }}</span>
-          <span class="text-gold-light">{{ row.count }}</span>
-        </li>
-      {% empty %}
-        <li class="text-gray-500">No orders yet.</li>
-      {% endfor %}
-    </ul>
+<!-- Grid Section: Recent Orders & Quick Tables -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  <!-- Recent Orders Table (2 cols) -->
+  <div class="lg:col-span-2 bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+      <h3 class="font-serif text-base text-white font-medium">Recent Orders</h3>
+      <a href="{% url 'dashboard:orders' %}" class="text-xs text-gold hover:text-gold-light">View All Orders →</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+          <tr>
+            <th class="py-2.5 px-2">Order #</th>
+            <th class="py-2.5 px-2">Customer</th>
+            <th class="py-2.5 px-2">Date</th>
+            <th class="py-2.5 px-2">Total</th>
+            <th class="py-2.5 px-2">Status</th>
+            <th class="py-2.5 px-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for order in recent_orders %}
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-3 px-2 font-mono text-gold-light">#{{ order.order_number }}</td>
+              <td class="py-3 px-2 text-gray-200">{{ order.user.get_full_name|default:order.user.username }}</td>
+              <td class="py-3 px-2 text-gray-400">{{ order.placed_at|date:"d M Y" }}</td>
+              <td class="py-3 px-2 text-white font-medium">₹{{ order.grand_total }}</td>
+              <td class="py-3 px-2">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                  {% if order.status == 'delivered' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                  {% elif order.status == 'cancelled' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
+                  {% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+                  {{ order.get_status_display }}
+                </span>
+              </td>
+              <td class="py-3 px-2 text-right">
+                <a href="{% url 'dashboard:order_detail' order.id %}" class="text-gold hover:underline font-medium">Manage</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="py-6 text-center text-gray-500">No orders placed yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-  <div class="bg-panel border border-white/10 rounded-xl p-6">
-    <h2 class="font-serif text-white mb-4">Low Stock Alerts</h2>
-    <ul class="space-y-2 text-sm">
-      {% for p in low_stock_products %}
-        <li class="flex justify-between border-b border-white/5 pb-2">
-          <span class="text-gray-300">{{ p.name }}</span>
-          <span class="text-red-400">{{ p.stock_quantity }} left</span>
-        </li>
-      {% empty %}
-        <li class="text-gray-500">Stock levels healthy.</li>
-      {% endfor %}
-    </ul>
+
+  <!-- Low Stock Alerts & Recent Customers (1 col) -->
+  <div class="space-y-6">
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+        <h3 class="font-serif text-base text-white font-medium">Low Stock Alerts</h3>
+        <a href="{% url 'dashboard:inventory' %}" class="text-xs text-gold hover:text-gold-light">Inventory →</a>
+      </div>
+      <ul class="space-y-3 text-xs">
+        {% for p in low_stock_products %}
+          <li class="flex items-center justify-between border-b border-white/5 pb-2">
+            <div>
+              <p class="text-gray-200 font-medium line-clamp-1">{{ p.name }}</p>
+              <p class="text-[10px] text-gray-500">SKU: {{ p.sku }}</p>
+            </div>
+            <span class="px-2 py-1 rounded bg-amber-500/20 text-amber-300 font-bold">{{ p.stock_quantity }} left</span>
+          </li>
+        {% empty %}
+          <li class="text-gray-500 py-4 text-center">Stock levels are healthy.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+        <h3 class="font-serif text-base text-white font-medium">Recent Customers</h3>
+        <a href="{% url 'dashboard:customers' %}" class="text-xs text-gold hover:text-gold-light">View All →</a>
+      </div>
+      <ul class="space-y-3 text-xs">
+        {% for c in recent_customers %}
+          <li class="flex items-center justify-between border-b border-white/5 pb-2">
+            <div>
+              <p class="text-gray-200 font-medium">{{ c.get_full_name|default:c.username }}</p>
+              <p class="text-[10px] text-gray-500">{{ c.email }}</p>
+            </div>
+            <span class="text-[10px] text-gray-400">{{ c.date_joined|date:"d M Y" }}</span>
+          </li>
+        {% empty %}
+          <li class="text-gray-500 py-4 text-center">No customers registered yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('overviewRevenueChart');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const spinner = document.getElementById('overviewSpinner');
-  const emptyState = document.getElementById('overviewEmptyState');
-  const chartWrapper = document.getElementById('overviewChartWrapper');
   const rangeSelect = document.getElementById('overviewRangeSelect');
-
   let overviewChart = null;
 
   function loadRevenueData() {
@@ -127,113 +209,41 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(res => res.json())
       .then(data => {
         spinner.classList.add('hidden');
-
-        if (!data.has_data) {
-          emptyState.classList.remove('hidden');
-          chartWrapper.classList.add('hidden');
-          if (overviewChart) overviewChart.destroy();
-          return;
-        }
-
-        emptyState.classList.add('hidden');
-        chartWrapper.classList.remove('hidden');
-
         if (overviewChart) overviewChart.destroy();
 
         const goldGradient = ctx.createLinearGradient(0, 0, 0, 260);
         goldGradient.addColorStop(0, 'rgba(201, 164, 83, 0.9)');
-        goldGradient.addColorStop(1, 'rgba(201, 164, 83, 0.25)');
+        goldGradient.addColorStop(1, 'rgba(201, 164, 83, 0.2)');
 
         overviewChart = new Chart(ctx, {
+          type: 'bar',
           data: {
             labels: data.labels,
-            datasets: [
-              {
-                type: 'bar',
-                label: 'Daily Revenue',
-                data: data.revenues,
-                backgroundColor: goldGradient,
-                borderColor: '#c9a453',
-                borderWidth: 1.5,
-                borderRadius: 5,
-                hoverBackgroundColor: '#e3cc8c',
-                order: 2,
-              },
-              {
-                type: 'line',
-                label: 'Average Daily Revenue',
-                data: data.average_line,
-                borderColor: '#fbbf24',
-                borderWidth: 2.5,
-                borderDash: [6, 4],
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                fill: false,
-                order: 1,
-              }
-            ]
+            datasets: [{
+              label: 'Daily Revenue (₹)',
+              data: data.revenues,
+              backgroundColor: goldGradient,
+              borderColor: '#c9a453',
+              borderWidth: 1.5,
+              borderRadius: 4,
+            }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                backgroundColor: '#1b1b1e',
-                titleColor: '#e3cc8c',
-                bodyColor: '#ffffff',
-                borderColor: 'rgba(201, 164, 83, 0.3)',
-                borderWidth: 1,
-                padding: 10,
-                callbacks: {
-                  label: function(context) {
-                    const val = context.parsed.y;
-                    const avg = data.average_daily_revenue;
-                    if (context.dataset.type === 'line') {
-                      return ` Average Daily Revenue: ₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-                    }
-                    const diff = val - avg;
-                    const diffPct = avg > 0 ? ((diff / avg) * 100).toFixed(1) : '0';
-                    const compStr = diff >= 0 ? `+${diffPct}% vs avg` : `${diffPct}% vs avg`;
-                    return [
-                      ` Daily Revenue: ₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}`,
-                      ` Comparison: ${compStr}`
-                    ];
-                  }
-                }
-              }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-              x: {
-                grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
-                ticks: { color: '#9ca3af', font: { family: 'Inter', size: 10 } }
-              },
-              y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 255, 255, 0.08)', drawBorder: false },
-                ticks: {
-                  color: '#9ca3af',
-                  font: { family: 'Inter', size: 10 },
-                  callback: function(v) {
-                    if (v >= 1000) return '₹' + (v / 1000).toFixed(0) + 'k';
-                    return '₹' + v;
-                  }
-                }
-              }
+              x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+              y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
             }
           }
         });
       })
-      .catch(err => {
-        spinner.classList.add('hidden');
-        console.error(err);
-      });
+      .catch(() => spinner.classList.add('hidden'));
   }
 
   rangeSelect.addEventListener('change', loadRevenueData);
   loadRevenueData();
-  setInterval(loadRevenueData, 30000);
 });
 </script>
 {% endblock %}
