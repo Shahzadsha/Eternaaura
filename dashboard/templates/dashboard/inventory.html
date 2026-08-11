@@ -2,61 +2,177 @@
 {% block page_title %}Inventory &amp; Stock Control{% endblock %}
 
 {% block content %}
-<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
-  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
-    <div>
-      <h2 class="font-serif text-lg text-white font-medium">Inventory &amp; Stock Levels</h2>
-      <p class="text-xs text-gray-400 mt-0.5">Quickly update stock quantities for all catalogue items</p>
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="border-b border-white/10 pb-5">
+    <h1 class="font-serif text-2xl sm:text-3xl text-white font-bold tracking-tight">Inventory &amp; Stock Control</h1>
+    <p class="text-xs text-gray-400 mt-1">Monitor real-time stock levels, low stock warnings, and update item quantities instantly</p>
+  </div>
+
+  <!-- KPI Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-gold/15 text-gold flex items-center justify-center text-xl shrink-0 font-serif font-bold">📦</div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Total Products</p>
+        <p class="text-2xl font-bold font-mono text-white mt-0.5">{{ total_products }}</p>
+      </div>
     </div>
-    <div class="flex items-center gap-2 text-xs">
-      <a href="{% url 'dashboard:inventory' %}" class="px-3 py-1.5 rounded-lg border border-white/15 text-gray-300 hover:bg-white/5">All Stock</a>
-      <a href="{% url 'dashboard:inventory' %}?filter=low_stock" class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">Low Stock (≤5)</a>
-      <a href="{% url 'dashboard:inventory' %}?filter=out_of_stock" class="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 font-medium">Out of Stock (0)</a>
+
+    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-xl shrink-0 font-serif font-bold">✅</div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">In Stock (&gt;5)</p>
+        <p class="text-2xl font-bold font-mono text-emerald-400 mt-0.5">{{ in_stock_count }}</p>
+      </div>
+    </div>
+
+    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-xl shrink-0 font-serif font-bold">⚠️</div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Low Stock (≤5)</p>
+        <p class="text-2xl font-bold font-mono text-amber-300 mt-0.5">{{ low_stock_count }}</p>
+      </div>
+    </div>
+
+    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-xl shrink-0 font-serif font-bold">🚫</div>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Out of Stock (0)</p>
+        <p class="text-2xl font-bold font-mono text-rose-400 mt-0.5">{{ out_of_stock_count }}</p>
+      </div>
     </div>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="w-full text-left text-xs">
-      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
-        <tr>
-          <th class="py-3 px-3">Product Name</th>
-          <th class="py-3 px-3">SKU</th>
-          <th class="py-3 px-3">Category</th>
-          <th class="py-3 px-3">Price</th>
-          <th class="py-3 px-3">Stock Quantity</th>
-          <th class="py-3 px-3 text-right">Quick Stock Update</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-white/5">
-        {% for p in products %}
-          <tr class="hover:bg-white/5 transition">
-            <td class="py-3 px-3 text-white font-medium">{{ p.name }}</td>
-            <td class="py-3 px-3 font-mono text-gray-400">{{ p.sku }}</td>
-            <td class="py-3 px-3 text-gray-300">{{ p.category.name|default:"Uncategorized" }}</td>
-            <td class="py-3 px-3 text-gold-light font-bold">₹{{ p.price }}</td>
-            <td class="py-3 px-3">
-              <span class="px-2.5 py-1 rounded text-xs font-bold
-                {% if p.stock_quantity == 0 %}bg-red-500/20 text-red-400 border border-red-500/30
-                {% elif p.stock_quantity <= 5 %}bg-amber-500/20 text-amber-300 border border-amber-500/30
-                {% else %}bg-emerald-500/20 text-emerald-300{% endif %}">
-                {{ p.stock_quantity }} units
-              </span>
-            </td>
-            <td class="py-3 px-3 text-right">
-              <form action="{% url 'dashboard:inventory' %}" method="post" class="inline-flex items-center justify-end gap-2">
-                {% csrf_token %}
-                <input type="hidden" name="product_id" value="{{ p.id }}">
-                <input type="number" name="stock_quantity" value="{{ p.stock_quantity }}" min="0"
-                       class="w-20 bg-panel2 border border-white/15 rounded px-2 py-1 text-center text-xs text-white focus:outline-none focus:border-gold">
-                <button type="submit" class="px-2.5 py-1 rounded bg-gold hover:bg-gold-dark text-black font-semibold text-[11px] transition">Save</button>
-              </form>
-            </td>
+  <!-- Filter & Search Toolbar -->
+  <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-2 text-xs flex-wrap w-full md:w-auto">
+      <a href="{% url 'dashboard:inventory' %}" 
+         class="px-4 py-2 rounded-xl border transition font-semibold {% if selected_filter == 'all' %}bg-gold text-black border-gold shadow-md{% else %}bg-panel2 text-gray-300 border-white/15 hover:bg-white/10{% endif %}">
+        All Stock ({{ total_products }})
+      </a>
+      <a href="{% url 'dashboard:inventory' %}?filter=low_stock" 
+         class="px-4 py-2 rounded-xl border transition font-semibold {% if selected_filter == 'low_stock' %}bg-amber-500 text-black border-amber-500 shadow-md{% else %}bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25{% endif %}">
+        Low Stock Warnings ({{ low_stock_count }})
+      </a>
+      <a href="{% url 'dashboard:inventory' %}?filter=out_of_stock" 
+         class="px-4 py-2 rounded-xl border transition font-semibold {% if selected_filter == 'out_of_stock' %}bg-rose-500 text-white border-rose-500 shadow-md{% else %}bg-rose-500/15 text-rose-300 border-rose-500/30 hover:bg-rose-500/25{% endif %}">
+        Out of Stock Alerts ({{ out_of_stock_count }})
+      </a>
+    </div>
+
+    <form method="get" class="w-full md:w-72 flex items-center gap-2">
+      <input type="hidden" name="filter" value="{{ selected_filter }}">
+      <div class="relative w-full">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by item name or SKU..."
+               class="w-full bg-panel2 border border-white/15 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold">
+        <span class="absolute left-3 top-2.5 text-gray-500 text-xs">🔍</span>
+      </div>
+      {% if q %}
+        <a href="{% url 'dashboard:inventory' %}?filter={{ selected_filter }}" class="text-xs text-gray-400 hover:text-white px-2 py-1 bg-white/5 rounded-lg">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Inventory Table Card -->
+  <div class="bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-panel2/60 text-gray-400 uppercase text-[10px] tracking-wider border-b border-white/10">
+          <tr>
+            <th class="py-3.5 px-4">Item Details</th>
+            <th class="py-3.5 px-4">Category</th>
+            <th class="py-3.5 px-4">Selling Price</th>
+            <th class="py-3.5 px-4">Current Stock Status</th>
+            <th class="py-3.5 px-4 text-right">Quick Quantity Update</th>
           </tr>
-        {% empty %}
-          <tr><td colspan="6" class="py-8 text-center text-gray-500">No products found matching stock filter.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-white/5 text-gray-300">
+          {% for p in products %}
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-black/40 border border-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+                    {% with img=p.images.first %}
+                      {% if img %}
+                        <img src="{{ img.image.url }}" alt="{{ p.name }}" class="w-full h-full object-cover">
+                      {% else %}
+                        <span class="text-[10px] text-gray-500 font-mono">No Img</span>
+                      {% endif %}
+                    {% endwith %}
+                  </div>
+                  <div>
+                    <p class="text-white font-semibold text-sm">{{ p.name }}</p>
+                    <p class="text-[11px] font-mono text-gray-400">SKU: <span class="text-gold-light">{{ p.sku }}</span></p>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300 font-medium text-[11px]">
+                  {{ p.category.name|default:"Uncategorized" }}
+                </span>
+              </td>
+              <td class="py-3 px-4 font-bold text-gold text-sm font-mono">
+                ₹{{ p.price }}
+              </td>
+              <td class="py-3 px-4">
+                {% if p.stock_quantity == 0 %}
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 font-bold text-xs">
+                    <span class="w-2 h-2 rounded-full bg-rose-500"></span> 0 Out of Stock
+                  </span>
+                {% elif p.stock_quantity <= 5 %}
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-xs">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span> {{ p.stock_quantity }} Low Stock Alert
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> {{ p.stock_quantity }} Healthy
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-right">
+                <form action="{% url 'dashboard:inventory' %}" method="post" class="inline-flex items-center justify-end gap-2">
+                  {% csrf_token %}
+                  <input type="hidden" name="product_id" value="{{ p.id }}">
+                  <input type="number" name="stock_quantity" value="{{ p.stock_quantity }}" min="0" required
+                         class="w-24 bg-panel2 border border-white/20 rounded-xl px-3 py-1.5 text-center text-xs font-mono font-bold text-white focus:outline-none focus:border-gold">
+                  <button type="submit" 
+                          class="px-4 py-1.5 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition shadow-md">
+                    Update
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="py-12 text-center text-gray-400">
+                <div class="max-w-xs mx-auto space-y-2">
+                  <p class="text-2xl">📦</p>
+                  <p class="font-medium text-white text-sm">No inventory items found</p>
+                  <p class="text-xs text-gray-500">Try changing your search query or inventory filter.</p>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+      <div class="flex items-center justify-between px-6 py-4 border-t border-white/10 text-xs text-gray-400 bg-panel2/40">
+        <div>Page {{ page_obj.number }} of {{ paginator.num_pages }}</div>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&filter={{ selected_filter }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&filter={{ selected_filter }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}

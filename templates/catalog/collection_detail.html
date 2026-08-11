@@ -2,25 +2,43 @@
 {% block title %}{{ collection.name }} — ETERNAAURA{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 md:px-8 py-12">
-  <div class="mb-10 text-center max-w-3xl mx-auto">
-    <p class="font-accent text-gold-dark text-lg tracking-widest uppercase">CURATED COLLECTION</p>
-    <h1 class="font-serif text-3xl md:text-5xl mt-2 text-ink">{{ collection.name }}</h1>
-    {% if collection.description %}
-    <p class="text-ink/60 mt-3 leading-relaxed">{{ collection.description }}</p>
-    {% endif %}
-  <!-- Filters & Toolbar -->
-  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 mb-8 border-b border-gold/20">
-    <div class="text-xs sm:text-sm text-ink/70">
-      Showing <strong class="text-ink font-semibold">{{ products|length }}</strong> handcrafted pieces
-    </div>
 
+<!-- Hero Banner Header if Banner Image exists -->
+{% if collection.banner_image %}
+<section class="relative h-[35vh] sm:h-[45vh] min-h-[260px] overflow-hidden bg-ink">
+  <img src="{{ collection.banner_image.url }}" alt="{{ collection.name }}" class="w-full h-full object-cover opacity-60">
+  <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent"></div>
+  <div class="absolute inset-0 flex items-center justify-center text-center px-4">
+    <div class="max-w-3xl">
+      <p class="font-accent text-gold-light text-sm sm:text-base tracking-widest uppercase mb-2">CURATED COLLECTION</p>
+      <h1 class="font-serif text-3xl sm:text-5xl text-cream font-bold">{{ collection.name }}</h1>
+      {% if collection.description %}
+      <p class="text-cream/80 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl mx-auto">{{ collection.description }}</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% else %}
+<div class="pt-10 pb-6 border-b border-gold/20 bg-champagne/30">
+  <div class="max-w-3xl mx-auto text-center px-4">
+    <p class="font-accent text-gold-dark text-xs sm:text-sm tracking-widest uppercase mb-1">CURATED COLLECTION</p>
+    <h1 class="font-serif text-3xl sm:text-5xl text-ink font-bold">{{ collection.name }}</h1>
+    {% if collection.description %}
+    <p class="text-ink/70 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl mx-auto">{{ collection.description }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="max-w-7xl mx-auto px-4 md:px-8 py-10 sm:py-14">
+
+  <!-- Filters & Toolbar -->
+  <div class="mb-6">
     {% include "partials/sort_control.html" %}
   </div>
 
   {% if products %}
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
     {% for product in products %}
       {% include "partials/product_card.html" %}
     {% endfor %}
@@ -37,5 +55,6 @@
     </a>
   </div>
   {% endif %}
+
 </div>
 {% endblock %}

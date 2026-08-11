@@ -5,6 +5,7 @@ from django.urls import reverse
 from accounts.models import Address
 from cart.models import Cart, CartItem
 from catalog.models import Category, Product
+from dashboard.models import StoreSettings
 from orders.models import Order, OrderItem
 
 User = get_user_model()
@@ -12,6 +13,14 @@ User = get_user_model()
 
 class OrdersAndBuyNowTests(TestCase):
     def setUp(self):
+        StoreSettings.objects.update_or_create(
+            pk=1,
+            defaults={
+                "merchant_upi_id": "testmerchant@upi",
+                "merchant_name": "TestStore",
+                "whatsapp_notify_number": "919876543210",
+            },
+        )
         self.user = User.objects.create_user(
             username="ordercustomer@eternaaura.com",
             email="ordercustomer@eternaaura.com",
@@ -100,4 +109,19 @@ class OrdersAndBuyNowTests(TestCase):
 
         # Regular cart item (product2) remains completely untouched!
         self.assertEqual(CartItem.objects.filter(cart=cart).count(), 1)
+
+    def test_checkout_blocked_when_store_settings_missing(self):
+        self.client.login(username="ordercustomer@eternaaura.com", password="SecurePassword123!")
+        
+        # Clear merchant settings
+        settings_obj = StoreSettings.get_solo()
+        settings_obj.merchant_upi_id = ""
+        settings_obj.whatsapp_notify_number = ""
+        settings_obj.save()
+
+        # Attempt to view checkout page
+        response = self.client.get(reverse("orders:checkout"))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("cart:detail"))
+
 

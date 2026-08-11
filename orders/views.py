@@ -1,3 +1,4 @@
+from decimal import Decimal
 import logging
 import urllib.parse
 import uuid
@@ -10,11 +11,14 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView
 
+import re
+
 from accounts.models import Address
 from accounts.views import NeverCacheLoginRequiredMixin
 from cart.models import Cart
 from catalog.models import Product
 from coupons.models import Coupon
+from dashboard.models import StoreSettings
 from payments.models import Payment
 from .models import Order, OrderItem, ReturnRequest
 
@@ -127,17 +131,27 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
             if coupon and coupon.is_valid_now(request.user):
                 discount_total = coupon.calculate_discount(subtotal)
 
+        store_settings = StoreSettings.get_solo()
         discounted_subtotal = max(0, subtotal - discount_total)
-        shipping_fee = 0 if discounted_subtotal > 2000 else 150
+        free_shipping_min = store_settings.free_shipping_threshold or Decimal("5000.00")
+        std_shipping_fee = store_settings.standard_shipping_fee or Decimal("150.00")
+        shipping_fee = Decimal("0.00") if discounted_subtotal >= free_shipping_min else std_shipping_fee
         grand_total = discounted_subtotal + shipping_fee
+
+        if not store_settings.merchant_upi_id or not store_settings.whatsapp_notify_number:
+            messages.error(
+                request,
+                "Order checkout is currently disabled because store payment settings (Merchant UPI ID or WhatsApp notify number) are not configured. Please contact the store administrator."
+            )
+            return redirect("cart:detail")
 
         txn_ref = request.session.get("checkout_txn_ref")
         if not txn_ref:
             txn_ref = f"TRX{uuid.uuid4().hex[:12].upper()}"
             request.session["checkout_txn_ref"] = txn_ref
 
-        merchant_upi = getattr(settings, "MERCHANT_UPI_ID", "eternaaura@upi")
-        merchant_name = getattr(settings, "MERCHANT_NAME", "EternaAura")
+        merchant_upi = store_settings.merchant_upi_id
+        merchant_name = store_settings.merchant_name or "Store"
         merchant_name_enc = urllib.parse.quote(merchant_name)
         upi_link = f"upi://pay?pa={merchant_upi}&pn={merchant_name_enc}&am={grand_total:.2f}&cu=INR&tr={txn_ref}&tn=Order_Checkout"
         qr_preview_url = f"{reverse('payments:upi_qr_preview')}?am={grand_total:.2f}&tr={txn_ref}"
@@ -148,6 +162,7 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
             "addresses": addresses,
             "is_buy_now": is_buy_now,
             "subtotal": subtotal,
+            "coupon": coupon,
             "discount_total": discount_total,
             "shipping_fee": shipping_fee,
             "grand_total": grand_total,
@@ -159,6 +174,14 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
         })
 
     def post(self, request):
+        store_settings = StoreSettings.get_solo()
+        if not store_settings.merchant_upi_id or not store_settings.whatsapp_notify_number:
+            messages.error(
+                request,
+                "Order placement failed because store payment settings (Merchant UPI ID or WhatsApp notify number) are missing. Please contact the store administrator."
+            )
+            return redirect("cart:detail")
+
         cart, is_buy_now = self._get_active_checkout_cart(request)
         if not cart or cart.items.count() == 0:
             messages.error(request, "Your cart is empty.")
@@ -245,8 +268,8 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                 while Payment.objects.filter(transaction_ref=transaction_ref).exists():
                     transaction_ref = f"TRX{uuid.uuid4().hex[:12].upper()}"
 
-                merchant_upi = getattr(settings, "MERCHANT_UPI_ID", "eternaaura@upi")
-                merchant_name = urllib.parse.quote(getattr(settings, "MERCHANT_NAME", "EternaAura"))
+                merchant_upi = store_settings.merchant_upi_id
+                merchant_name = urllib.parse.quote(store_settings.merchant_name or "Store")
                 upi_link = f"upi://pay?pa={merchant_upi}&pn={merchant_name}&am={grand_total:.2f}&cu=INR&tr={transaction_ref}&tn=Order_{order.order_number}"
 
                 payment = Payment.objects.create(
@@ -309,7 +332,7 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                 f"📝 *NOTES:* Customer completed UPI QR payment flow and submitted order. Pending staff verification."
             )
 
-            target_phone = "919847549961"
+            target_phone = re.sub(r"\D", "", store_settings.whatsapp_notify_number)
             encoded_msg = urllib.parse.quote(whatsapp_msg)
             whatsapp_url = f"https://api.whatsapp.com/send?phone={target_phone}&text={encoded_msg}"
 

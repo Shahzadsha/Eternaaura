@@ -1,4 +1,4 @@
-from catalog.models import Category, Wishlist
+from catalog.models import Category, Collection, Wishlist
 
 
 def wishlist_summary(request):
@@ -19,10 +19,9 @@ def wishlist_summary(request):
     }
 
 
-
 def nav_categories_processor(request):
     """
-    Injects active top-level categories (with prefetched active children)
+    Injects active top-level categories and active collections
     into template context on every request for navigation menus.
     """
     top_categories = (
@@ -30,7 +29,22 @@ def nav_categories_processor(request):
         .prefetch_related("children")
         .order_by("display_order", "name")
     )
+    active_collections = Collection.objects.filter(is_active=True).order_by("name")
     return {
         "nav_categories": top_categories,
+        "nav_collections": active_collections,
+    }
+
+
+def store_settings_processor(request):
+    """
+    Injects global store_settings and site_settings into template context
+    on every request so Admin Settings changes instantly reflect everywhere.
+    """
+    from dashboard.models import StoreSettings
+    settings_obj = StoreSettings.get_solo()
+    return {
+        "store_settings": settings_obj,
+        "site_settings": settings_obj,
     }
 

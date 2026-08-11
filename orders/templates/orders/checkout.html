@@ -116,41 +116,94 @@
 
       </div>
 
-      <!-- Order Summary -->
-      <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 h-fit space-y-6 border border-black/5">
-        <h2 class="font-serif text-lg sm:text-xl border-b border-ink/10 pb-4">Order Summary</h2>
+      <!-- Order Summary (Flipkart Price Details Model) -->
+      <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 h-fit space-y-5 border border-black/5">
+        <h2 class="font-accent text-xs uppercase tracking-widest text-ink/50 font-bold border-b border-ink/10 pb-3">Price Details</h2>
 
-        <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+        <!-- Items List -->
+        <div class="space-y-3.5 max-h-72 overflow-y-auto pr-1 scrollbar-none">
           {% for item in cart.items.all %}
-          <div class="flex items-center gap-3 text-sm">
-            <div class="w-12 h-12 rounded-lg bg-champagne overflow-hidden shrink-0">
+          <div class="flex items-start gap-3 text-sm pb-3 border-b border-ink/5 last:border-0 last:pb-0">
+            <div class="w-14 h-14 rounded-xl bg-champagne overflow-hidden shrink-0 border border-black/5">
               {% with img=item.product.images.first %}
-              {% if img %}<img src="{{ img.image.url }}" class="w-full h-full object-cover">{% endif %}
+              {% if img %}
+                <img src="{{ img.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+              {% else %}
+                <div class="w-full h-full flex items-center justify-center text-gold-dark/40 text-xs">✦</div>
+              {% endif %}
               {% endwith %}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-serif text-xs truncate">{{ item.product.name }}</p>
-              <p class="text-xs text-ink/50">Qty: {{ item.quantity }}</p>
+              <p class="font-serif text-xs sm:text-sm font-medium text-ink truncate">{{ item.product.name }}</p>
+              {% if item.variant %}
+                <p class="text-[11px] text-gold-dark font-medium mt-0.5">
+                  Variant: {% for v in item.variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}
+                </p>
+              {% endif %}
+              <div class="flex items-center gap-2 mt-1 text-xs text-ink/60">
+                <span>Qty: {{ item.quantity }}</span>
+                {% if item.product.compare_at_price %}
+                  <span class="text-[10px] text-ink/40 line-through">₹{{ item.product.compare_at_price }}</span>
+                {% endif %}
+              </div>
             </div>
-            <p class="font-medium text-xs shrink-0">₹{{ item.line_total }}</p>
+            <div class="text-right shrink-0">
+              <p class="font-semibold text-xs sm:text-sm text-ink">₹{{ item.line_total }}</p>
+            </div>
           </div>
           {% endfor %}
         </div>
 
-        <div class="border-t border-ink/10 pt-4 space-y-2 text-sm">
-          <div class="flex justify-between text-ink/70"><span>Subtotal</span><span>₹{{ cart.subtotal }}</span></div>
+        <!-- Price Breakdown (Flipkart Style) -->
+        <div class="border-t border-ink/10 pt-4 space-y-2.5 text-xs sm:text-sm">
           <div class="flex justify-between text-ink/70">
-            <span>Shipping</span>
-            <span>{% if cart.subtotal > 2000 %}<span class="text-green-600 font-medium">FREE</span>{% else %}₹150{% endif %}</span>
+            <span>Price ({{ cart.items.count }} item{% if cart.items.count > 1 %}s{% endif %})</span>
+            <span class="font-medium text-ink">₹{{ subtotal|floatformat:2 }}</span>
           </div>
-          <div class="flex justify-between font-serif text-base sm:text-lg text-ink font-semibold pt-2 border-t border-ink/10">
-            <span>Total</span>
-            <span>₹{% if cart.subtotal > 2000 %}{{ cart.subtotal }}{% else %}{{ cart.subtotal|add:150 }}{% endif %}</span>
+
+          {% if discount_total > 0 %}
+          <div class="flex justify-between text-green-700 font-medium">
+            <span>Coupon Discount</span>
+            <span>− ₹{{ discount_total|floatformat:2 }}</span>
+          </div>
+          {% endif %}
+
+          <div class="flex justify-between text-ink/70">
+            <span>Delivery Charges</span>
+            {% if shipping_fee == 0 %}
+              <span class="text-green-700 font-semibold uppercase tracking-wider text-xs">FREE</span>
+            {% else %}
+              <span class="font-medium text-ink">₹{{ shipping_fee|floatformat:2 }}</span>
+            {% endif %}
+          </div>
+
+          <div class="flex justify-between font-serif text-base sm:text-lg text-ink font-bold pt-3 border-t border-dashed border-ink/15">
+            <span>Total Amount</span>
+            <span class="text-gold-dark">₹{{ grand_total|floatformat:2 }}</span>
           </div>
         </div>
 
+        <!-- Savings Banner (Flipkart Style) -->
+        {% if discount_total > 0 or shipping_fee == 0 %}
+        <div class="p-3 bg-green-50 rounded-xl border border-green-200/60 text-center">
+          <p class="text-xs font-semibold text-green-800 flex items-center justify-center gap-1">
+            <span>🎉 You will save</span>
+            <span class="font-bold">
+              {% if discount_total > 0 and shipping_fee == 0 %}
+                ₹{{ discount_total|add:150|floatformat:2 }}
+              {% elif discount_total > 0 %}
+                ₹{{ discount_total|floatformat:2 }}
+              {% else %}
+                ₹150 (Free Delivery)
+              {% endif %}
+            </span>
+            <span>on this order!</span>
+          </p>
+        </div>
+        {% endif %}
+
         <button type="submit" id="place_order_btn" disabled
-                class="w-full py-3.5 bg-ink text-cream rounded-full font-medium text-sm tracking-wide hover:bg-gold hover:text-ink transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                class="w-full py-3.5 bg-ink text-cream rounded-full font-medium text-xs sm:text-sm tracking-wide hover:bg-gold hover:text-ink transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
           Place Order &amp; Open WhatsApp →
         </button>
       </div>

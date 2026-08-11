@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.conf import settings
 from django.db import models
 
@@ -26,8 +27,8 @@ class LoginAttempt(models.Model):
         ordering = ["-attempted_at"]
 
 
-class StoreSetting(models.Model):
-    """Global store configuration managed by Super Admin."""
+class StoreSettings(models.Model):
+    """Global store configuration managed by Super Admin (Singleton model)."""
     store_name = models.CharField(max_length=150, default="ETERNAAURA")
     contact_email = models.EmailField(default="support@eternaaura.com")
     support_phone = models.CharField(max_length=30, default="+91 98765 43210")
@@ -36,7 +37,12 @@ class StoreSetting(models.Model):
     tax_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=3.00)
     standard_shipping_fee = models.DecimalField(max_digits=8, decimal_places=2, default=150.00)
     free_shipping_threshold = models.DecimalField(max_digits=8, decimal_places=2, default=5000.00)
-    
+
+    # Merchant UPI & WhatsApp notification configuration
+    merchant_upi_id = models.CharField(max_length=255, blank=True, default="", help_text="UPI VPA ID for accepting payments (e.g. merchant@upi)")
+    merchant_name = models.CharField(max_length=255, blank=True, default="", help_text="Registered Merchant Name displayed on UPI apps")
+    whatsapp_notify_number = models.CharField(max_length=50, blank=True, default="", help_text="WhatsApp phone number (with country code) for order notifications")
+
     enable_razorpay = models.BooleanField(default=True)
     enable_stripe = models.BooleanField(default=True)
     enable_cod = models.BooleanField(default=True)
@@ -44,11 +50,28 @@ class StoreSetting(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = "Store Setting"
+        verbose_name_plural = "Store Settings"
+
     def __str__(self):
-        return self.store_name
+        return self.store_name or "Store Settings"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+        cache.delete("store_settings_solo")
 
     @classmethod
     def get_solo(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
+        obj = cache.get("store_settings_solo")
+        if not obj:
+            obj, _ = cls.objects.get_or_create(pk=1)
+            cache.set("store_settings_solo", obj, 3600)
         return obj
+
+
+# Alias for backwards compatibility
+StoreSetting = StoreSettings
+
 

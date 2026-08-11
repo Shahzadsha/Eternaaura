@@ -5,124 +5,234 @@
 {% block meta_description %}{{ product.meta_description|default:product.short_description }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 md:px-8 py-10" x-data="{ activeImage: 0, qty: 1, tab: '{{ request.GET.tab|default:'description' }}' }">
+<div class="w-full max-w-7xl mx-auto px-4 md:px-8 py-6 sm:py-10"
+     x-data="{
+       activeImage: 0,
+       totalImages: {{ product.images.all|length|default:1 }},
+       selectedVariant: {% if product.variants.first %}{{ product.variants.first.id }}{% else %}null{% endif %},
+       selectedColorName: '{% if product.variants.first %}{% for v in product.variants.first.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}{% else %}Default{% endif %}',
+       currentPrice: '{% if product.variants.first %}{{ product.variants.first.effective_price }}{% else %}{{ product.price }}{% endif %}',
+       currentSku: '{{ product.sku }}{% if product.variants.first and product.variants.first.sku_suffix %}-{{ product.variants.first.sku_suffix }}{% endif %}',
+       inStock: {% if product.variants.first %}{% if product.variants.first.stock_quantity > 0 %}true{% else %}false{% endif %}{% else %}{% if product.in_stock %}true{% else %}false{% endif %}{% endif %},
+       stockCount: {% if product.variants.first %}{{ product.variants.first.stock_quantity }}{% else %}{{ product.stock_quantity }}{% endif %},
+       qty: 1,
+       tab: '{{ request.GET.tab|default:'description' }}',
+       specsExpanded: false,
+
+       selectColor(variantId, colorName, price, skuSuffix, stockQty, imgIdx) {
+         this.selectedVariant = variantId;
+         this.selectedColorName = colorName;
+         this.currentPrice = price;
+         this.currentSku = '{{ product.sku }}' + (skuSuffix ? ('-' + skuSuffix) : '');
+         this.stockCount = stockQty;
+         this.inStock = stockQty > 0;
+         if (imgIdx !== null && imgIdx !== undefined && imgIdx >= 0 && this.totalImages > 0) {
+           this.activeImage = imgIdx % this.totalImages;
+         }
+       },
+
+       nextImage() {
+         if (this.totalImages > 0) {
+           this.activeImage = (this.activeImage + 1) % this.totalImages;
+         }
+       },
+
+       prevImage() {
+         if (this.totalImages > 0) {
+           this.activeImage = (this.activeImage - 1 + this.totalImages) % this.totalImages;
+         }
+       },
+
+       setImage(idx) {
+         if (idx >= 0 && idx < this.totalImages) {
+           this.activeImage = idx;
+         }
+       }
+     }">
 
   <!-- Breadcrumb -->
-  <nav class="text-sm text-ink/50 mb-6">
+  <nav class="text-xs sm:text-sm text-ink/50 mb-4 sm:mb-6 w-full">
     <a href="{% url 'catalog:home' %}" class="hover:text-gold-dark">Home</a> /
     <a href="{{ product.category.get_absolute_url }}" class="hover:text-gold-dark">{{ product.category.name }}</a> /
     <span class="text-ink">{{ product.name }}</span>
   </nav>
 
-  <div class="grid md:grid-cols-2 gap-12">
+  <div class="w-full grid md:grid-cols-2 gap-6 sm:gap-12 items-start">
 
-    <!-- GALLERY -->
-    <div>
-      <div class="relative rounded-2xl overflow-hidden bg-champagne aspect-square mb-4 cursor-zoom-in" id="mainImageWrap">
+    <!-- GALLERY CONTAINER (Flipkart Style) -->
+    <div class="w-full max-w-full min-w-0">
+      <div class="relative rounded-2xl overflow-hidden bg-champagne aspect-square mb-2.5 sm:mb-3 w-full max-w-full sm:max-w-none mx-auto group shadow-sm border border-black/5" id="mainImageWrap">
         {% for img in product.images.all %}
-        <img x-show="activeImage === {{ forloop.counter0 }}" src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}"
-             class="w-full h-full object-cover transition-transform duration-300" id="zoomImage{{ forloop.counter0 }}"
-             onmousemove="eaZoom(event, this)" onmouseleave="this.style.transform='scale(1)'">
+        <img x-show="activeImage === {{ forloop.counter0 }}"
+             x-transition:enter="transition ease-out duration-300 opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}"
+             class="w-full h-full object-cover select-none">
+        {% empty %}
+        <div class="w-full h-full flex flex-col items-center justify-center bg-champagne text-gold-dark/40">
+          <span class="font-serif text-4xl">✦</span>
+          <span class="text-xs uppercase tracking-widest font-accent text-ink/40 mt-1">Eternaaura</span>
+        </div>
         {% endfor %}
+
         {% if product.view_360 %}
-        <button class="absolute bottom-4 right-4 bg-ink/80 text-cream text-xs px-3 py-1.5 rounded-full">360° View</button>
+        <button class="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 bg-ink/80 text-cream text-[10px] sm:text-xs px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full z-10">360° View</button>
         {% endif %}
       </div>
-      <div class="flex gap-3 overflow-x-auto">
+
+      <!-- Carousel Position Indicator Dots -->
+      {% if product.images.all|length > 1 %}
+      <div class="flex items-center justify-center gap-1.5 mb-3 w-full">
         {% for img in product.images.all %}
-        <button @click="activeImage = {{ forloop.counter0 }}" :class="activeImage === {{ forloop.counter0 }} ? 'ring-2 ring-gold' : 'ring-1 ring-black/10'"
-                class="w-20 h-20 rounded-xl overflow-hidden shrink-0">
-          <img src="{{ img.image.url }}" class="w-full h-full object-cover" loading="lazy">
+        <button type="button" @click="setImage({{ forloop.counter0 }})"
+                :class="activeImage === {{ forloop.counter0 }} ? 'bg-gold w-6 sm:w-7' : 'bg-ink/20 hover:bg-ink/40 w-2 sm:w-2.5'"
+                class="h-2 rounded-full transition-all duration-300 cursor-pointer"
+                aria-label="Go to image {{ forloop.counter }}">
         </button>
         {% endfor %}
       </div>
+      {% endif %}
+
+      <!-- PRODUCT VARIANT THUMBNAIL GALLERY (Images Only - Flipkart Style) -->
+      {% if color_variant_products|length > 1 %}
+      <div class="mt-4 w-full max-w-full">
+        <div class="flex gap-2.5 sm:gap-3 overflow-x-auto pb-1 scrollbar-none justify-start w-full max-w-full">
+          {% for p in color_variant_products %}
+          <a href="{{ p.get_absolute_url }}"
+             class="relative w-14 h-14 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 transition-all duration-200 cursor-pointer bg-champagne {% if p.pk == product.pk %}border-2 border-gold ring-2 ring-gold/30 shadow-md scale-105{% else %}border border-black/15 opacity-70 hover:opacity-100 hover:border-gold/50{% endif %}"
+             title="{% if p.metal_purity %}{{ p.get_metal_purity_display }}{% elif p.gemstone %}{{ p.gemstone }}{% elif p.variants.first %}{% for v in p.variants.first.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}{% else %}{{ p.name }}{% endif %}">
+
+            {% if p.images.first %}
+              <img src="{{ p.images.first.image.url }}" alt="{{ p.name }}" class="w-full h-full object-cover">
+            {% else %}
+              <div class="w-full h-full flex items-center justify-center bg-champagne text-gold-dark/40 text-xs">✦</div>
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% elif product.variants.all %}
+      <!-- Fallback: Internal Product Variants (Images Only) -->
+      <div class="mt-4 w-full max-w-full">
+        <div class="flex gap-2.5 sm:gap-3 overflow-x-auto pb-1 scrollbar-none justify-start w-full max-w-full">
+          {% for variant in product.variants.all %}
+          {% with v_index=forloop.counter0 %}
+          <button type="button"
+                  @click="selectColor({{ variant.id }}, '{% for v in variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}', '{{ variant.effective_price }}', '{{ variant.sku_suffix }}', {{ variant.stock_quantity }}, {{ v_index }})"
+                  :class="selectedVariant === {{ variant.id }} ? 'border-2 border-gold ring-2 ring-gold/30 shadow-md scale-105' : 'border border-black/15 opacity-70 hover:opacity-100 hover:border-gold/50'"
+                  class="relative w-14 h-14 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 transition-all duration-200 cursor-pointer bg-champagne"
+                  title="{% for v in variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}">
+
+            {% for img in product.images.all %}
+              {% if forloop.counter0 == v_index %}
+                <img src="{{ img.image.url }}" alt="{% for v in variant.values.all %}{{ v.value }}{% endfor %}" class="w-full h-full object-cover">
+              {% endif %}
+            {% empty %}
+              {% if product.images.first %}
+                <img src="{{ product.images.first.image.url }}" alt="{% for v in variant.values.all %}{{ v.value }}{% endfor %}" class="w-full h-full object-cover">
+              {% endif %}
+            {% endfor %}
+          </button>
+          {% endwith %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- INFO -->
-    <div>
-      <p class="font-accent text-gold-dark tracking-widest text-sm uppercase mb-2">{{ product.category.name }}</p>
-      <h1 class="font-serif text-3xl md:text-4xl mb-3">{{ product.name }}</h1>
+    <div class="w-full min-w-0">
+      <p class="font-accent text-gold-dark tracking-widest text-xs sm:text-sm uppercase mb-1 sm:mb-2">{{ product.category.name }}</p>
+      <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl mb-2 sm:mb-3 text-ink leading-tight break-words">{{ product.name }}</h1>
 
-      <div class="flex items-center gap-2 mb-4">
-        <span class="text-lg flex items-center">{{ product.average_rating|render_stars }}</span>
-        <span class="text-sm text-ink/50">{{ product.average_rating }} · {{ product.review_count }} reviews</span>
+      <div class="flex items-center gap-2 mb-3 sm:mb-4">
+        <span class="text-base sm:text-lg flex items-center">{{ product.average_rating|render_stars }}</span>
+        <span class="text-xs sm:text-sm text-ink/50">{{ product.average_rating }} · {{ product.review_count }} reviews</span>
       </div>
 
-      <div class="flex items-baseline gap-3 mb-2">
-        <span class="font-serif text-3xl">₹{{ product.price }}</span>
+      <div class="flex items-baseline gap-2.5 sm:gap-3 mb-1 sm:mb-2 flex-wrap">
+        <span class="font-serif text-2xl sm:text-3xl text-ink">₹<span x-text="currentPrice"></span></span>
         {% if product.compare_at_price %}
-        <span class="text-lg text-ink/40 line-through">₹{{ product.compare_at_price }}</span>
-        <span class="text-sm font-medium text-green-700">{{ product.discount_percent }}% off</span>
+        <span class="text-sm sm:text-lg text-ink/40 line-through">₹{{ product.compare_at_price }}</span>
+        <span class="text-xs sm:text-sm font-medium text-green-700">{{ product.discount_percent }}% off</span>
         {% endif %}
       </div>
-      <p class="text-xs text-ink/50 mb-6">Inclusive of all taxes</p>
+      <p class="text-[10px] sm:text-xs text-ink/50 mb-4 sm:mb-6">Inclusive of all taxes</p>
 
-      <p class="text-ink/70 mb-6">{{ product.short_description }}</p>
+      <p class="text-ink/70 text-xs sm:text-sm mb-4 sm:mb-6 leading-relaxed">{{ product.short_description }}</p>
 
       <!-- Stock / SKU -->
-      <div class="flex flex-wrap gap-4 text-sm mb-6">
-        <span class="px-3 py-1 rounded-full {% if product.in_stock %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-700{% endif %}">
-          {% if product.in_stock %}In Stock{% else %}Out of Stock{% endif %}
+      <div class="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm mb-4 sm:mb-6">
+        <span class="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full font-medium transition-colors"
+              :class="inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'"
+              x-text="inStock ? 'In Stock' : 'Out of Stock'">
         </span>
-        {% if product.is_low_stock %}<span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800">Only {{ product.stock_quantity }} left</span>{% endif %}
-        <span class="px-3 py-1 rounded-full bg-champagne text-ink/70">SKU: {{ product.sku }}</span>
+        <span x-show="inStock && stockCount <= {{ product.low_stock_threshold|default:5 }}"
+              class="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-100 text-amber-800 font-medium">
+          Only <span x-text="stockCount"></span> left
+        </span>
+        <span class="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-champagne text-ink/70 font-medium" x-text="'SKU: ' + currentSku"></span>
       </div>
 
       <!-- Variants -->
       {% if product.variants.all %}
-      <div class="mb-6">
-        <p class="text-sm font-medium mb-2">Select Variant</p>
-        <div class="flex flex-wrap gap-2">
+      <div class="mb-4 sm:mb-6 w-full">
+        <p class="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Select Variant</p>
+        <div class="flex flex-wrap gap-1.5 sm:gap-2 w-full">
           {% for variant in product.variants.all %}
-          <button type="button" class="px-4 py-2 rounded-full border border-ink/15 text-sm hover:border-gold hover:text-gold-dark transition-colors">
+          {% with v_index=forloop.counter0 %}
+          <button type="button"
+                  @click="selectColor({{ variant.id }}, '{% for v in variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}', '{{ variant.effective_price }}', '{{ variant.sku_suffix }}', {{ variant.stock_quantity }}, {{ v_index }})"
+                  :class="selectedVariant === {{ variant.id }} ? 'border-2 border-gold bg-gold/10 text-gold-dark font-semibold shadow-sm scale-105' : 'border border-ink/15 text-ink hover:border-gold hover:text-gold-dark'"
+                  class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer">
             {% for v in variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}
           </button>
+          {% endwith %}
           {% endfor %}
         </div>
       </div>
       {% endif %}
 
       <!-- Quantity + Actions -->
-      <div class="flex flex-wrap items-center gap-3 sm:gap-4 mb-6">
-        <div class="flex items-center border border-ink/15 rounded-full bg-white">
-          <button @click="qty = Math.max(1, qty - 1)" class="w-10 h-10 flex items-center justify-center text-lg font-medium hover:bg-black/5 rounded-l-full transition-colors">−</button>
-          <span class="w-10 text-center font-medium" x-text="qty"></span>
-          <button @click="qty++" class="w-10 h-10 flex items-center justify-center text-lg font-medium hover:bg-black/5 rounded-r-full transition-colors">+</button>
+      <div class="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 sm:mb-6 w-full">
+        <div class="flex items-center border border-ink/15 rounded-full bg-white shrink-0">
+          <button @click="qty = Math.max(1, qty - 1)" class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-base sm:text-lg font-medium hover:bg-black/5 rounded-l-full transition-colors">−</button>
+          <span class="w-8 sm:w-10 text-center font-medium text-xs sm:text-base" x-text="qty"></span>
+          <button @click="qty++" class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-base sm:text-lg font-medium hover:bg-black/5 rounded-r-full transition-colors">+</button>
         </div>
-        <form action="{% url 'catalog:toggle_wishlist' product.id %}" method="post" class="inline">
+        <form action="{% url 'catalog:toggle_wishlist' product.id %}" method="post" class="inline shrink-0">
           {% csrf_token %}
-          <button type="submit" class="w-11 h-11 rounded-full border border-ink/15 flex items-center justify-center hover:border-gold hover:bg-gold/10 transition-colors cursor-pointer"
+          <button type="submit" class="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-ink/15 flex items-center justify-center hover:border-gold hover:bg-gold/10 transition-colors cursor-pointer"
                   data-wishlist-toggle data-product-id="{{ product.id }}" aria-label="Toggle Wishlist">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 {% if is_wishlisted or product.id in user_wishlist_ids %}fill-gold text-gold{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 {% if is_wishlisted or product.id in user_wishlist_ids %}fill-gold text-gold{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
           </button>
         </form>
-        <button class="w-11 h-11 rounded-full border border-ink/15 flex items-center justify-center hover:border-gold hover:bg-gold/10 transition-colors" onclick="if (navigator.share) { navigator.share({title: document.title, url: window.location.href}); } else { navigator.clipboard.writeText(window.location.href); alert('Product link copied to clipboard!'); }" aria-label="Share Product">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/></svg>
+        <button class="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-ink/15 flex items-center justify-center hover:border-gold hover:bg-gold/10 transition-colors shrink-0" onclick="if (navigator.share) { navigator.share({title: document.title, url: window.location.href}); } else { navigator.clipboard.writeText(window.location.href); alert('Product link copied to clipboard!'); }" aria-label="Share Product">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/></svg>
         </button>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-        <form action="{% url 'cart:add' product.id %}" method="post">
+      <div class="grid grid-cols-2 gap-2.5 sm:gap-3 mb-6 sm:mb-8 w-full">
+        <form action="{% url 'cart:add' product.id %}" method="post" class="w-full min-w-0">
           {% csrf_token %}
           <input type="hidden" name="quantity" x-bind:value="qty">
           <button type="submit" {% if not product.in_stock %}disabled{% endif %}
-            class="w-full py-3.5 rounded-full font-medium border-2 border-ink text-ink hover:bg-ink hover:text-cream transition-colors disabled:opacity-40 text-sm">
+            class="w-full py-2.5 sm:py-3.5 rounded-full font-medium border-2 border-ink text-ink hover:bg-ink hover:text-cream transition-colors disabled:opacity-40 text-xs sm:text-sm">
             Add to Cart
           </button>
         </form>
-        <form action="{% url 'orders:buy_now' product.id %}" method="post" class="flex-1">
+        <form action="{% url 'orders:buy_now' product.id %}" method="post" class="w-full min-w-0">
           {% csrf_token %}
           <input type="hidden" name="quantity" x-bind:value="qty">
           <button type="submit" {% if not product.in_stock %}disabled{% endif %}
-            class="w-full py-3.5 rounded-full font-medium bg-gold text-ink text-center hover:bg-gold-dark transition-colors shadow-md text-sm flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+            class="w-full py-2.5 sm:py-3.5 rounded-full font-medium bg-gold text-ink text-center hover:bg-gold-dark transition-colors shadow-md text-xs sm:text-sm flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
             Buy Now
           </button>
         </form>
       </div>
 
-
       <!-- Delivery / Return / Warranty -->
-      <div class="border-t border-ink/10 pt-6 space-y-3 text-sm text-ink/70">
+      <div class="border-t border-ink/10 pt-4 sm:pt-6 space-y-2 sm:space-y-3 text-xs sm:text-sm text-ink/70 w-full">
         <p>🚚 Estimated delivery: <strong>3–7 business days</strong></p>
         <p>↩ 7-day easy returns · No-questions-asked</p>
         <p>🛡 Lifetime authenticity warranty on all metals &amp; gemstones</p>
@@ -131,32 +241,47 @@
   </div>
 
   <!-- TABS: Description / Specifications -->
-  <div class="mt-12 sm:mt-16">
-    <div class="flex gap-4 sm:gap-8 border-b border-ink/10 overflow-x-auto whitespace-nowrap scrollbar-none pb-0.5">
+  <div class="mt-12 sm:mt-16 w-full max-w-full">
+    <div class="flex gap-4 sm:gap-8 border-b border-ink/10 overflow-x-auto whitespace-nowrap scrollbar-none pb-0.5 w-full max-w-full">
       <button @click="tab = 'description'" :class="tab === 'description' ? 'border-gold text-ink' : 'border-transparent text-ink/50'" class="pb-3 border-b-2 font-medium text-sm sm:text-base shrink-0">Description</button>
       <button @click="tab = 'specs'" :class="tab === 'specs' ? 'border-gold text-ink' : 'border-transparent text-ink/50'" class="pb-3 border-b-2 font-medium text-sm sm:text-base shrink-0">Specifications</button>
       <button @click="tab = 'reviews'" :class="tab === 'reviews' ? 'border-gold text-ink' : 'border-transparent text-ink/50'" class="pb-3 border-b-2 font-medium text-sm sm:text-base shrink-0">Reviews ({{ product.review_count }})</button>
       <button @click="tab = 'qa'" :class="tab === 'qa' ? 'border-gold text-ink' : 'border-transparent text-ink/50'" class="pb-3 border-b-2 font-medium text-sm sm:text-base shrink-0">Q&amp;A</button>
     </div>
 
+    <div x-show="tab === 'description'" class="py-8 text-ink/70 leading-relaxed max-w-3xl w-full">{{ product.description|linebreaks }}</div>
 
-    <div x-show="tab === 'description'" class="py-8 text-ink/70 leading-relaxed max-w-3xl">{{ product.description|linebreaks }}</div>
+    <div x-show="tab === 'specs'" class="py-6 sm:py-8 w-full" style="display:none">
+      <div class="max-w-2xl w-full">
+        <table class="w-full text-sm">
+          <tbody>
+            {% for key, value in product.specifications.items %}
+            <tr class="border-b border-ink/10" :class="!specsExpanded && {{ forloop.counter0 }} >= 5 ? 'hidden' : ''">
+              <td class="py-2.5 text-ink/60 font-medium w-1/3 text-xs sm:text-sm">{{ key }}</td>
+              <td class="py-2.5 text-ink font-semibold text-xs sm:text-sm">{{ value }}</td>
+            </tr>
+            {% empty %}
+              {% if product.metal_purity %}<tr class="border-b border-ink/10"><td class="py-2.5 text-ink/60 font-medium w-1/3 text-xs sm:text-sm">Metal Purity</td><td class="py-2.5 text-ink font-semibold text-xs sm:text-sm">{{ product.get_metal_purity_display }}</td></tr>{% endif %}
+              {% if product.metal_weight_grams %}<tr class="border-b border-ink/10"><td class="py-2.5 text-ink/60 font-medium w-1/3 text-xs sm:text-sm">Metal Weight</td><td class="py-2.5 text-ink font-semibold text-xs sm:text-sm">{{ product.metal_weight_grams }} g</td></tr>{% endif %}
+              {% if product.gemstone %}<tr class="border-b border-ink/10"><td class="py-2.5 text-ink/60 font-medium w-1/3 text-xs sm:text-sm">Gemstone</td><td class="py-2.5 text-ink font-semibold text-xs sm:text-sm">{{ product.gemstone }}</td></tr>{% endif %}
+              {% if product.gemstone_details %}<tr class="border-b border-ink/10"><td class="py-2.5 text-ink/60 font-medium w-1/3 text-xs sm:text-sm">Gemstone Details</td><td class="py-2.5 text-ink font-semibold text-xs sm:text-sm">{{ product.gemstone_details }}</td></tr>{% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
 
-    <div x-show="tab === 'specs'" class="py-8" style="display:none">
-      <table class="w-full max-w-2xl text-sm">
-        <tbody>
-          {% if product.metal_purity %}<tr class="border-b border-ink/10"><td class="py-2 text-ink/50">Metal Purity</td><td class="py-2">{{ product.get_metal_purity_display }}</td></tr>{% endif %}
-          {% if product.metal_weight_grams %}<tr class="border-b border-ink/10"><td class="py-2 text-ink/50">Metal Weight</td><td class="py-2">{{ product.metal_weight_grams }} g</td></tr>{% endif %}
-          {% if product.gemstone %}<tr class="border-b border-ink/10"><td class="py-2 text-ink/50">Gemstone</td><td class="py-2">{{ product.gemstone }}</td></tr>{% endif %}
-          {% for key, value in product.specifications.items %}
-          <tr class="border-b border-ink/10"><td class="py-2 text-ink/50">{{ key }}</td><td class="py-2">{{ value }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+        {% if product.specifications.items|length > 5 %}
+        <div class="mt-4 pt-2">
+          <button type="button" @click="specsExpanded = !specsExpanded"
+                  class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gold-dark hover:text-ink transition-colors cursor-pointer group">
+            <span x-text="specsExpanded ? 'Show Less ↑' : 'More ↓'"></span>
+          </button>
+        </div>
+        {% endif %}
+      </div>
     </div>
 
-    <div x-show="tab === 'reviews'" class="py-8 max-w-3xl" style="display:none">
-      <div class="flex justify-end mb-4">
+    <div x-show="tab === 'reviews'" class="py-8 max-w-3xl w-full" style="display:none">
+      <div class="flex justify-end mb-4 w-full">
         <form method="get" action="{{ request.path }}" id="reviewSortForm" class="flex items-center gap-2">
           <input type="hidden" name="tab" value="reviews">
           <label for="reviewSortSelect" class="text-xs text-ink/60">Sort Reviews:</label>
@@ -188,9 +313,9 @@
           </script>
         </form>
       </div>
-      <div class="space-y-6">
+      <div class="space-y-6 w-full">
         {% for review in reviews %}
-        <div class="border-b border-ink/10 pb-6">
+        <div class="border-b border-ink/10 pb-6 w-full">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-sm flex items-center">{{ review.rating|render_stars }}</span>
             {% if review.is_verified_purchase %}<span class="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">Verified Purchase</span>{% endif %}
@@ -198,8 +323,8 @@
           <p class="font-medium">{{ review.title }}</p>
           <p class="text-ink/70 text-sm mt-1">{{ review.body }}</p>
           {% if review.images.all %}
-          <div class="flex gap-2 mt-3">
-            {% for img in review.images.all %}<img src="{{ img.image.url }}" class="w-16 h-16 rounded-lg object-cover">{% endfor %}
+          <div class="flex gap-2 mt-3 overflow-x-auto">
+            {% for img in review.images.all %}<img src="{{ img.image.url }}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0">{% endfor %}
           </div>
           {% endif %}
           <p class="text-xs text-ink/40 mt-2">{{ review.user.get_full_name|default:review.user.username }} · {{ review.created_at|date:"M d, Y" }} · {{ review.helpful_count }} found this helpful</p>
@@ -210,7 +335,7 @@
       </div>
 
       {% if is_reviews_paginated %}
-      <div class="flex items-center justify-between pt-6 mt-4 border-t border-ink/10 text-sm">
+      <div class="flex items-center justify-between pt-6 mt-4 border-t border-ink/10 text-sm w-full">
         {% if reviews_page_obj.has_previous %}
           <a href="?tab=reviews&review_sort={{ review_sort }}&page={{ reviews_page_obj.previous_page_number }}" class="px-4 py-2 border border-ink/15 rounded-full hover:border-gold hover:text-gold-dark transition-colors">Previous</a>
         {% else %}
@@ -226,21 +351,21 @@
       {% endif %}
 
       {% if user.is_authenticated %}
-      <form action="{% url 'reviews:add' product.id %}" method="post" class="mt-8 space-y-3">
+      <form action="{% url 'reviews:add' product.id %}" method="post" class="mt-8 space-y-3 w-full">
         {% csrf_token %}
-        <select name="rating" class="border border-ink/15 rounded-lg px-3 py-2 text-sm">
+        <select name="rating" class="border border-ink/15 rounded-lg px-3 py-2 text-sm w-full sm:w-auto">
           {% for i in "54321" %}<option value="{{ i }}">{{ i }} stars</option>{% endfor %}
         </select>
         <input name="title" placeholder="Review title" class="w-full border border-ink/15 rounded-lg px-3 py-2 text-sm">
         <textarea name="body" placeholder="Share your experience…" class="w-full border border-ink/15 rounded-lg px-3 py-2 text-sm" rows="3"></textarea>
-        <button class="bg-ink text-cream px-5 py-2 rounded-full text-sm">Submit Review</button>
+        <button class="bg-ink text-cream px-5 py-2 rounded-full text-sm font-medium">Submit Review</button>
       </form>
       {% endif %}
     </div>
 
-    <div x-show="tab === 'qa'" class="py-8 max-w-3xl" style="display:none">
+    <div x-show="tab === 'qa'" class="py-8 max-w-3xl w-full" style="display:none">
       {% for q in questions %}
-      <div class="border-b border-ink/10 pb-4 mb-4">
+      <div class="border-b border-ink/10 pb-4 mb-4 w-full">
         <p class="font-medium">Q: {{ q.question }}</p>
         {% for a in q.answers.all %}
         <p class="text-ink/70 text-sm mt-1 pl-4">A: {{ a.answer }} {% if a.is_official %}<span class="text-xs text-gold-dark">— ETERNAAURA Team</span>{% endif %}</p>
@@ -250,10 +375,10 @@
       <p class="text-ink/50">No questions yet.</p>
       {% endfor %}
       {% if user.is_authenticated %}
-      <form action="{% url 'reviews:ask' product.id %}" method="post" class="flex gap-2 mt-4">
+      <form action="{% url 'reviews:ask' product.id %}" method="post" class="flex flex-col sm:flex-row gap-2 mt-4 w-full">
         {% csrf_token %}
-        <input name="question" placeholder="Ask a question about this product…" class="flex-1 border border-ink/15 rounded-full px-4 py-2 text-sm">
-        <button class="bg-ink text-cream px-5 py-2 rounded-full text-sm">Ask</button>
+        <input name="question" placeholder="Ask a question about this product…" class="flex-1 min-w-0 border border-ink/15 rounded-full px-4 py-2 text-sm">
+        <button class="bg-ink text-cream px-5 py-2 rounded-full text-sm font-medium">Ask</button>
       </form>
       {% endif %}
     </div>
@@ -261,9 +386,9 @@
 
   <!-- RELATED PRODUCTS -->
   {% if related_products %}
-  <section class="mt-20">
-    <h2 class="font-serif text-2xl md:text-3xl mb-8">You May Also Like</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+  <section class="mt-16 sm:mt-20 w-full">
+    <h2 class="font-serif text-2xl md:text-3xl mb-6 sm:mb-8 text-ink">You May Also Like</h2>
+    <div class="w-full grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
       {% for product in related_products %}{% include "partials/product_card.html" %}{% endfor %}
     </div>
   </section>
@@ -271,9 +396,9 @@
 
   <!-- RECENTLY VIEWED -->
   {% if recently_viewed %}
-  <section class="mt-20">
-    <h2 class="font-serif text-2xl md:text-3xl mb-8">Recently Viewed</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+  <section class="mt-16 sm:mt-20 w-full">
+    <h2 class="font-serif text-2xl md:text-3xl mb-6 sm:mb-8 text-ink">Recently Viewed</h2>
+    <div class="w-full grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
       {% for rv in recently_viewed %}
         {% with product=rv.product %}{% include "partials/product_card.html" %}{% endwith %}
       {% endfor %}

@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Category, HeroBanner, Product
+from .models import Category, Collection, HeroBanner, Product
 
 DARK_INPUT = (
     "w-full rounded-lg bg-panel2 border border-white/10 px-4 py-2.5 text-sm "
@@ -71,16 +71,53 @@ class CategoryForm(forms.ModelForm):
         }
 
 
+class CollectionForm(forms.ModelForm):
+    class Meta:
+        model = Collection
+        fields = ["name", "slug", "description", "banner_image", "is_active"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": DARK_INPUT, "placeholder": "e.g. Royal Bridal Heritage"}),
+            "slug": forms.TextInput(attrs={"class": DARK_INPUT, "placeholder": "e.g. royal-bridal-heritage (auto-generated if blank)"}),
+            "description": forms.Textarea(attrs={"class": DARK_TEXTAREA, "rows": 4, "placeholder": "Crafted for timeless elegance and modern royalty..."}),
+            "banner_image": forms.ClearableFileInput(attrs={"class": DARK_INPUT, "accept": "image/*"}),
+            "is_active": forms.CheckboxInput(attrs={"class": DARK_CHECKBOX}),
+        }
+
+
+from coupons.models import Coupon
+
+
 class HeroBannerForm(forms.ModelForm):
     class Meta:
         model = HeroBanner
-        fields = ["title", "subtitle", "image", "cta_label", "cta_url", "display_order", "is_active"]
+        fields = ["title", "subtitle", "image", "display_order", "is_active"]
         widgets = {
             "title": forms.TextInput(attrs={"class": DARK_INPUT}),
             "subtitle": forms.TextInput(attrs={"class": DARK_INPUT}),
             "image": forms.ClearableFileInput(attrs={"class": DARK_INPUT}),
-            "cta_label": forms.TextInput(attrs={"class": DARK_INPUT}),
-            "cta_url": forms.TextInput(attrs={"class": DARK_INPUT}),
             "display_order": forms.NumberInput(attrs={"class": DARK_INPUT}),
+            "is_active": forms.CheckboxInput(attrs={"class": DARK_CHECKBOX}),
+        }
+
+
+class CouponForm(forms.ModelForm):
+    class Meta:
+        model = Coupon
+        fields = [
+            "code", "description", "discount_type", "discount_value",
+            "min_order_value", "max_discount_amount", "usage_limit",
+            "user_limit", "valid_from", "valid_until", "is_active",
+        ]
+        widgets = {
+            "code": forms.TextInput(attrs={"class": DARK_INPUT + " uppercase font-mono tracking-wider", "placeholder": "e.g. ETERNA20"}),
+            "description": forms.TextInput(attrs={"class": DARK_INPUT, "placeholder": "e.g. 20% off on all bridal jewellery"}),
+            "discount_type": forms.Select(attrs={"class": DARK_SELECT}),
+            "discount_value": forms.NumberInput(attrs={"class": DARK_INPUT, "step": "0.01", "placeholder": "e.g. 20"}),
+            "min_order_value": forms.NumberInput(attrs={"class": DARK_INPUT, "step": "0.01", "placeholder": "0"}),
+            "max_discount_amount": forms.NumberInput(attrs={"class": DARK_INPUT, "step": "0.01", "placeholder": "Optional cap"}),
+            "usage_limit": forms.NumberInput(attrs={"class": DARK_INPUT, "placeholder": "Optional total limit"}),
+            "user_limit": forms.NumberInput(attrs={"class": DARK_INPUT, "placeholder": "Limit per user (default 1)"}),
+            "valid_from": forms.DateTimeInput(attrs={"class": DARK_INPUT, "type": "datetime-local"}),
+            "valid_until": forms.DateTimeInput(attrs={"class": DARK_INPUT, "type": "datetime-local"}),
             "is_active": forms.CheckboxInput(attrs={"class": DARK_CHECKBOX}),
         }

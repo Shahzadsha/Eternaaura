@@ -2,22 +2,200 @@
 {% block page_title %}{% if object %}Edit Coupon{% else %}Create Coupon{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl">
-  <h2 class="font-serif text-xl text-white font-bold mb-6">{% if object %}Edit Coupon "{{ object.code }}"{% else %}Create New Coupon{% endif %}</h2>
-  <form method="post" class="space-y-4 text-xs">
-    {% csrf_token %}
-    {% for field in form %}
-      <div>
-        <label class="block text-gray-300 font-medium mb-1">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}
-          <p class="text-rose-400 text-[11px] mt-1">{{ field.errors.0 }}</p>
-        {% endif %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <!-- Header Card -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-panel border border-white/10 rounded-2xl p-6 shadow-lg">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs uppercase tracking-widest text-gold-light font-semibold">Promotional Marketing</span>
+        <span class="text-gray-600">•</span>
+        <span class="text-xs text-gray-400">{% if object %}Edit Coupon{% else %}New Coupon{% endif %}</span>
       </div>
-    {% endfor %}
-    <div class="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-      <a href="{% url 'dashboard:coupons' %}" class="px-4 py-2 rounded-lg border border-white/15 text-gray-300 hover:bg-white/5 transition">Cancel</a>
-      <button type="submit" class="px-5 py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold transition">Save Coupon</button>
+      <h1 class="font-serif text-2xl sm:text-3xl text-white font-bold">
+        {% if object %}Edit Coupon "{{ object.code }}"{% else %}Create Promotional Coupon{% endif %}
+      </h1>
+      <p class="text-xs sm:text-sm text-gray-400 mt-1">Configure discount codes, percentage/flat values, minimum order thresholds, and validity dates.</p>
+    </div>
+    <a href="{% url 'dashboard:coupons' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 text-xs font-medium text-gray-300 hover:bg-white/5 hover:border-gold/30 transition">
+      <span>← Back to Coupons</span>
+    </a>
+  </div>
+
+  {% if form.errors %}
+    <div class="rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm p-5 shadow-lg">
+      <p class="font-semibold mb-1 text-red-200">Please correct the error(s) below:</p>
+      <ul class="list-disc list-inside space-y-1 text-xs text-red-300">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <li><strong>{% if field != '__all__' %}{{ field|title }}{% else %}General{% endif %}:</strong> {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- 1. Coupon Core Information -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+        <div class="w-9 h-9 rounded-xl bg-gold/10 border border-gold/30 flex items-center justify-center text-gold">🎟️</div>
+        <div>
+          <h2 class="font-serif text-lg text-white font-semibold">Coupon Code &amp; Discount Rate</h2>
+          <p class="text-xs text-gray-400">Define code format, description, and reward value.</p>
+        </div>
+      </div>
+
+      <div class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Coupon Code <span class="text-gold">*</span></label>
+            {{ form.code }}
+            {% if form.code.errors %}<p class="text-red-400 text-xs mt-1">{{ form.code.errors|striptags }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Short Description</label>
+            {{ form.description }}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Discount Type <span class="text-gold">*</span></label>
+            {{ form.discount_type }}
+          </div>
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Discount Value (% or ₹) <span class="text-gold">*</span></label>
+            {{ form.discount_value }}
+            {% if form.discount_value.errors %}<p class="text-red-400 text-xs mt-1">{{ form.discount_value.errors|striptags }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Live Customer-Facing Coupon Card Preview -->
+        <div class="mt-6 pt-5 border-t border-white/10"
+             x-data="{
+               type: '{{ form.discount_type.value|default:'percent' }}',
+               val: '{{ form.discount_value.value|default:0 }}',
+               code: '{{ form.code.value|default:'WELCOME' }}',
+               init() {
+                 const typeEl = document.getElementById('id_discount_type');
+                 const valEl = document.getElementById('id_discount_value');
+                 const codeEl = document.getElementById('id_code');
+                 if (typeEl) {
+                   this.type = typeEl.value || 'percent';
+                   typeEl.addEventListener('change', (e) => this.type = e.target.value);
+                 }
+                 if (valEl) {
+                   this.val = valEl.value || '0';
+                   valEl.addEventListener('input', (e) => this.val = e.target.value);
+                 }
+                 if (codeEl) {
+                   this.code = codeEl.value || 'WELCOME';
+                   codeEl.addEventListener('input', (e) => this.code = e.target.value);
+                 }
+               },
+               get formattedVal() {
+                 let num = parseFloat(this.val) || 0;
+                 if (num % 1 === 0) return num.toFixed(0);
+                 return num.toString();
+               },
+               get badgeText() {
+                 if (this.type === 'percent' || this.type === 'PERCENT' || this.type === 'percentage') {
+                   return this.formattedVal + '% OFF';
+                 }
+                 return '₹' + this.formattedVal + ' OFF';
+               },
+               get headlineText() {
+                 if (this.type === 'percent' || this.type === 'PERCENT' || this.type === 'percentage') {
+                   return 'Save ' + this.formattedVal + '% on your order';
+                 }
+                 return 'Save ₹' + this.formattedVal + ' on your order';
+               }
+             }">
+          <p class="text-xs uppercase tracking-wider text-gold-light font-semibold mb-3">Live Storefront Card Preview</p>
+          <div class="bg-white rounded-2xl p-5 border border-white/20 text-ink max-w-sm shadow-md">
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-3 py-1 rounded-full bg-gold/15 border border-gold/30 text-gold-dark text-xs font-serif font-bold uppercase tracking-wider" x-text="badgeText"></span>
+              <span class="text-[11px] text-green-600 font-semibold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active Offer
+              </span>
+            </div>
+            <h4 class="font-serif text-base text-ink font-semibold mb-2" x-text="headlineText"></h4>
+            <div class="pt-3 border-t border-black/5 flex items-center justify-between gap-2">
+              <div class="bg-cream/80 border border-gold/40 rounded-xl px-3 py-1.5 font-mono font-bold text-xs text-ink tracking-wider uppercase" x-text="code || 'COUPON'"></div>
+              <span class="text-xs font-medium text-gold-dark">Customer View</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Order & Usage Limits -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+        <div class="w-9 h-9 rounded-xl bg-gold/10 border border-gold/30 flex items-center justify-center text-gold">⚖️</div>
+        <div>
+          <h2 class="font-serif text-lg text-white font-semibold">Redemption Rules &amp; Limits</h2>
+          <p class="text-xs text-gray-400">Order minimums, maximum discount caps, and redemption limits.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Minimum Order Amount (₹)</label>
+          {{ form.min_order_value }}
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Maximum Discount Cap (₹)</label>
+          {{ form.max_discount_amount }}
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Total Usage Limit (All Users)</label>
+          {{ form.usage_limit }}
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Per-Customer Redemption Limit</label>
+          {{ form.user_limit }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Validity & Status -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+        <div class="w-9 h-9 rounded-xl bg-gold/10 border border-gold/30 flex items-center justify-center text-gold">📅</div>
+        <div>
+          <h2 class="font-serif text-lg text-white font-semibold">Validity Period &amp; Status</h2>
+          <p class="text-xs text-gray-400">Start and expiration dates and coupon activation switch.</p>
+        </div>
+      </div>
+
+      <div class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Valid From</label>
+            {{ form.valid_from }}
+          </div>
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-gray-300 font-medium mb-1.5">Valid Until</label>
+            {{ form.valid_until }}
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2.5 p-3 rounded-xl bg-panel2 border border-white/10 hover:border-gold/40 cursor-pointer transition">
+          {{ form.is_active }} <span class="text-xs font-medium text-cream">Coupon Active &amp; Redeemable at Checkout</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3 pt-4">
+      <a href="{% url 'dashboard:coupons' %}" class="px-6 py-3 rounded-xl border border-white/15 text-sm font-medium text-gray-300 hover:bg-white/5 transition">Cancel</a>
+      <button type="submit" class="px-8 py-3 rounded-xl bg-gold hover:bg-gold-light text-ink font-semibold text-sm shadow-lg shadow-gold/20 transition cursor-pointer">
+        {% if object %}Save Coupon{% else %}Create Coupon{% endif %}
+      </button>
     </div>
   </form>
 </div>

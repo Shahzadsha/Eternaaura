@@ -46,6 +46,7 @@ class RemoveCouponView(View):
         return redirect(request.META.get("HTTP_REFERER", "cart:detail"))
 
 
+from django.http import JsonResponse
 from django.views.generic import ListView
 
 
@@ -56,5 +57,15 @@ class CouponListView(ListView):
 
     def get_queryset(self):
         return Coupon.objects.filter(is_active=True).order_by("-valid_from")
+
+
+class CouponDetailApiView(View):
+    def get(self, request, code):
+        coupon = Coupon.objects.filter(code__iexact=code.strip(), is_active=True).first()
+        if not coupon or not coupon.is_valid_now(request.user):
+            return JsonResponse({"valid": False, "error": "Invalid or expired coupon code."}, status=404)
+        data = coupon.to_dict()
+        data["valid"] = True
+        return JsonResponse(data)
 
 

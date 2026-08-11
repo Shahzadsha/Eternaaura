@@ -1,38 +1,146 @@
 {% extends "dashboard/base.html" %}
-{% block page_title %}Categories{% endblock %}
-{% block content %}
-<div class="flex justify-between items-center mb-6">
-  <p class="text-sm text-gray-500">{{ categories.count }} categories</p>
-  <a href="{% url 'dashboard:category_create' %}" class="text-xs bg-gold text-ink font-semibold px-4 py-2 rounded-lg hover:bg-gold-light transition">+ Add Category</a>
-</div>
-<div class="bg-panel border border-white/10 rounded-xl overflow-x-auto">
-  <table class="w-full text-sm min-w-[500px]">
-    <thead class="bg-panel2 text-gray-400 text-xs uppercase tracking-wide">
-      <tr>
-        <th class="text-left px-5 py-3">Name</th>
-        <th class="text-left px-5 py-3">Products</th>
-        <th class="text-left px-5 py-3">Status</th>
-        <th class="text-right px-5 py-3">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in categories %}
-      <tr class="border-t border-white/5 hover:bg-white/5">
-        <td class="px-5 py-3 text-gray-200 font-medium">{{ c.name }}</td>
-        <td class="px-5 py-3 text-gray-400">{{ c.products.count }}</td>
-        <td class="px-5 py-3">
-          {% if c.is_active %}<span class="text-emerald-400 text-xs font-medium">Active</span>{% else %}<span class="text-gray-500 text-xs">Inactive</span>{% endif %}
-        </td>
-        <td class="px-5 py-3 text-right space-x-3">
-          <a href="{% url 'dashboard:category_edit' c.pk %}" class="text-gold-light hover:underline text-xs">Edit</a>
-          <a href="{% url 'dashboard:category_delete' c.pk %}" class="text-red-400 hover:underline text-xs">Delete</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="4" class="px-5 py-8 text-center text-gray-500">No categories yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+{% block page_title %}Categories Management{% endblock %}
 
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header & Primary Action -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+    <div>
+      <h1 class="font-serif text-2xl sm:text-3xl text-white font-bold tracking-tight">Product Categories</h1>
+      <p class="text-xs text-gray-400 mt-1">Organize jewellery catalogue hierarchy, display orders, and active statuses</p>
+    </div>
+    <div>
+      <a href="{% url 'dashboard:category_create' %}" 
+         class="px-5 py-2.5 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs tracking-wide transition shadow-lg shadow-gold/10 flex items-center gap-2">
+        <span class="text-base font-bold">+</span> Create Category
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Stats Bar -->
+  <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+    <form method="get" class="w-full sm:w-80 flex items-center gap-2">
+      <div class="relative w-full">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search categories..."
+               class="w-full bg-panel2 border border-white/15 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold">
+        <span class="absolute left-3 top-2.5 text-gray-500 text-xs">🔍</span>
+      </div>
+      {% if q %}
+        <a href="{% url 'dashboard:categories' %}" class="text-xs text-gray-400 hover:text-white px-2 py-1 bg-white/5 rounded-lg">Clear</a>
+      {% endif %}
+    </form>
+    <div class="text-xs text-gray-400 font-medium">
+      Total Categories: <span class="text-gold font-mono font-bold">{{ page_obj.paginator.count|default:total_categories }}</span>
+    </div>
+  </div>
+
+  <!-- Categories Table Card -->
+  <div class="bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-panel2/60 text-gray-400 uppercase text-[10px] tracking-wider border-b border-white/10">
+          <tr>
+            <th class="py-3.5 px-4">Category Image</th>
+            <th class="py-3.5 px-4">Category Name</th>
+            <th class="py-3.5 px-4">URL Slug</th>
+            <th class="py-3.5 px-4">Parent Category</th>
+            <th class="py-3.5 px-4">Products</th>
+            <th class="py-3.5 px-4">Display Order</th>
+            <th class="py-3.5 px-4">Status</th>
+            <th class="py-3.5 px-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5 text-gray-300">
+          {% for c in categories %}
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-3 px-4">
+                <div class="w-12 h-12 rounded-xl bg-black/40 border border-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+                  {% if c.image %}
+                    <img src="{{ c.image.url }}" alt="{{ c.name }}" class="w-full h-full object-cover">
+                  {% else %}
+                    <span class="text-[10px] text-gray-500 font-mono">No Img</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <p class="text-white font-semibold text-sm">{{ c.name }}</p>
+                {% if c.description %}
+                  <p class="text-[11px] text-gray-400 line-clamp-1 max-w-xs">{{ c.description }}</p>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 font-mono text-gray-400 text-[11px]">{{ c.slug }}</td>
+              <td class="py-3 px-4">
+                {% if c.parent %}
+                  <span class="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300 font-medium text-[11px]">
+                    {{ c.parent.name }}
+                  </span>
+                {% else %}
+                  <span class="text-gray-500 text-[11px]">— Main Category</span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold font-mono font-bold text-[11px]">
+                  💎 {{ c.product_count }} items
+                </span>
+              </td>
+              <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded-lg bg-panel2 border border-white/10 font-mono font-medium text-[11px] text-gray-300">
+                  #{{ c.display_order }}
+                </span>
+              </td>
+              <td class="py-3 px-4">
+                {% if c.is_active %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold text-[11px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/30 text-gray-400 font-semibold text-[11px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span> Disabled
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-right space-x-2">
+                <a href="{% url 'dashboard:category_edit' c.id %}" 
+                   class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-gold hover:text-black border border-white/10 text-gray-300 font-medium text-xs transition">
+                  Edit
+                </a>
+                <a href="{% url 'dashboard:category_delete' c.id %}" 
+                   class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-medium text-xs transition">
+                  Delete
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="py-12 text-center text-gray-400">
+                <div class="max-w-xs mx-auto space-y-2">
+                  <p class="text-2xl">✨</p>
+                  <p class="font-medium text-white text-sm">No categories found</p>
+                  <p class="text-xs text-gray-500">Create your first category to start organizing products.</p>
+                  <a href="{% url 'dashboard:category_create' %}" class="inline-block mt-2 px-4 py-2 rounded-xl bg-gold text-black font-semibold text-xs">+ Create Category</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+      <div class="flex items-center justify-between px-6 py-4 border-t border-white/10 text-xs text-gray-400 bg-panel2/40">
+        <div>Page {{ page_obj.number }} of {{ paginator.num_pages }}</div>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
 {% endblock %}

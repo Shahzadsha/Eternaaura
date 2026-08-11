@@ -20,6 +20,60 @@ class Coupon(models.Model):
     valid_until = models.DateTimeField()
     is_active = models.BooleanField(default=True)
 
+    @property
+    def formatted_discount_value(self):
+        """
+        Formats discount value without trailing zeroes if integer,
+        e.g., 20 instead of 20.00, or 10.5 instead of 10.50.
+        """
+        if self.discount_value is None:
+            return "0"
+        val = self.discount_value
+        if val % 1 == 0:
+            return f"{int(val)}"
+        return f"{val:.2f}".rstrip("0").rstrip(".")
+
+    @property
+    def formatted_discount_badge(self):
+        """
+        Returns dynamic discount badge text:
+        - Percentage: '20% OFF' or '10.5% OFF'
+        - Flat: '₹20 OFF' or '₹150 OFF'
+        """
+        val_str = self.formatted_discount_value
+        if self.discount_type == self.DiscountType.PERCENT:
+            return f"{val_str}% OFF"
+        return f"₹{val_str} OFF"
+
+    @property
+    def formatted_discount_title(self):
+        """
+        Returns dynamic headline:
+        - Percentage: 'Save 20% on your order'
+        - Flat: 'Save ₹20 on your order'
+        """
+        val_str = self.formatted_discount_value
+        if self.discount_type == self.DiscountType.PERCENT:
+            return f"Save {val_str}% on your order"
+        return f"Save ₹{val_str} on your order"
+
+    def to_dict(self):
+        """
+        Returns dictionary format for API responses with exact discount type and value.
+        """
+        return {
+            "code": self.code,
+            "description": self.description,
+            "discount_type": self.discount_type,
+            "discount_value": float(self.discount_value) if self.discount_value else 0.0,
+            "formatted_discount_value": self.formatted_discount_value,
+            "formatted_discount_badge": self.formatted_discount_badge,
+            "formatted_discount_title": self.formatted_discount_title,
+            "min_order_value": float(self.min_order_value) if self.min_order_value else 0.0,
+            "max_discount_amount": float(self.max_discount_amount) if self.max_discount_amount else None,
+            "is_active": self.is_active,
+        }
+
     def is_valid_now(self, user=None):
         now = timezone.now()
         if not self.is_active or not (self.valid_from <= now <= self.valid_until):

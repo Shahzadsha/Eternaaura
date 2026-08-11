@@ -12,18 +12,16 @@
         All Collection Items
       {% endif %}
     </h1>
-  <!-- Filters & Toolbar -->
-  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 mb-8 border-b border-gold/20">
-    <div class="text-xs sm:text-sm text-ink/70">
-      Showing <strong class="text-ink font-semibold">{{ page_obj.paginator.count|default:products|length }}</strong> handcrafted pieces
-    </div>
+  </div>
 
+  <!-- Filters & Toolbar -->
+  <div class="mb-6">
     {% include "partials/sort_control.html" %}
   </div>
 
   {% if products %}
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
     {% for product in products %}
       {% include "partials/product_card.html" %}
     {% endfor %}

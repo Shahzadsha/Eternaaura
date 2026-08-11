@@ -1,7 +1,9 @@
+from decimal import Decimal
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from catalog.models import Product
+from dashboard.models import StoreSettings
 from .models import Cart, CartItem
 
 
@@ -44,11 +46,18 @@ class CartDetailView(View):
                 request.session.pop("coupon_code", None)
                 coupon = None
 
-        grand_total = max(0, cart.subtotal - discount_amount)
+        store_settings = StoreSettings.get_solo()
+        discounted_subtotal = max(0, cart.subtotal - discount_amount)
+        free_shipping_min = store_settings.free_shipping_threshold or Decimal("5000.00")
+        std_shipping_fee = store_settings.standard_shipping_fee or Decimal("150.00")
+        shipping_fee = Decimal("0.00") if discounted_subtotal >= free_shipping_min else std_shipping_fee
+        grand_total = discounted_subtotal + shipping_fee
+
         return render(request, "cart/detail.html", {
             "cart": cart,
             "coupon": coupon,
             "discount_amount": discount_amount,
+            "shipping_fee": shipping_fee,
             "grand_total": grand_total,
         })
 

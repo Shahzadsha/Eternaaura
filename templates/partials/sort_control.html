@@ -1,34 +1,313 @@
-<form method="get" action="{{ request.path }}" id="sortForm" class="flex items-center gap-2">
-  <label for="sortSelect" class="text-xs sm:text-sm font-medium text-ink/70 shrink-0">Sort by:</label>
-  <select id="sortSelect" name="sort"
-          onchange="this.form.submit()"
-          class="bg-white border border-gold/30 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold cursor-pointer">
-    <option value="newest" {% if current_sort == 'newest' or not current_sort %}selected{% endif %}>Newest First (New Arrivals)</option>
-    <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
-    <option value="best_sellers" {% if current_sort == 'best_sellers' %}selected{% endif %}>Best Sellers</option>
-    <option value="trending" {% if current_sort == 'trending' %}selected{% endif %}>Trending</option>
-    <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
-    <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
-    <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest Rated</option>
-    <option value="reviews" {% if current_sort == 'reviews' %}selected{% endif %}>Most Reviewed</option>
-    <option value="name_asc" {% if current_sort == 'name_asc' or current_sort == 'name' %}selected{% endif %}>Name (A–Z)</option>
-    <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name (Z–A)</option>
-  </select>
-  <button type="submit" class="text-xs bg-ink text-cream px-3 py-1.5 rounded-xl hover:bg-gold hover:text-ink transition-colors cursor-pointer">Sort</button>
-  <script>
-    (function(){
-      var f = document.getElementById('sortForm');
-      if (f) {
-        var timer = null;
-        f.submit = function() {
-          var params = new URLSearchParams(new FormData(f)).toString();
-          var target = (f.action || window.location.pathname) + '?' + params;
-          if (timer) clearTimeout(timer);
-          timer = setTimeout(function() {
-            window.location.href = target;
-          }, 50);
-        };
-      }
-    })();
-  </script>
-</form>
+<div x-data="{
+       filterSheetOpen: false,
+       sortSheetOpen: false,
+       currentSort: '{{ current_sort|default:'newest' }}',
+       applySort(val) {
+         this.currentSort = val;
+         let form = document.getElementById('catalogFilterSortForm');
+         if (form) {
+           let sortInput = form.querySelector('input[name=sort]');
+           if (sortInput) sortInput.value = val;
+           form.submit();
+         } else {
+           let url = new URL(window.location.href);
+           url.searchParams.set('sort', val);
+           window.location.href = url.toString();
+         }
+       }
+     }" class="w-full">
+
+  <!-- Desktop & Tablet Header Control Bar -->
+  <div class="w-full flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 pb-4 mb-6 border-b border-gold/20">
+    
+    <!-- Matching Product Count & Active Filter Pills -->
+    <div class="flex items-center flex-wrap gap-2 text-xs sm:text-sm text-ink/70">
+      <span class="font-medium text-ink">
+        Showing <strong class="text-gold-dark font-serif text-base">{{ matching_count|default:products|length }}</strong> product{% if matching_count != 1 %}s{% endif %}
+      </span>
+
+      {% if active_filter_count > 0 %}
+        <span class="text-ink/30">•</span>
+        <a href="{{ request.path }}?sort={{ current_sort }}"
+           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/15 text-gold-dark border border-gold/30 text-xs font-semibold hover:bg-gold hover:text-ink transition-colors"
+           title="Clear active filters">
+          <span>Clear {{ active_filter_count }} filter{% if active_filter_count > 1 %}s{% endif %}</span>
+          <span>✕</span>
+        </a>
+      {% endif %}
+    </div>
+
+    <!-- Desktop Filter & Sort Buttons -->
+    <div class="flex items-center gap-3 justify-between md:justify-end">
+      <!-- Filter Button (Desktop) -->
+      <button type="button" @click="filterSheetOpen = true"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-champagne text-ink border border-gold/30 hover:bg-gold/10 text-xs sm:text-sm font-semibold transition-colors cursor-pointer shadow-sm">
+        <svg class="w-4 h-4 text-gold-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        <span>Filters</span>
+        {% if active_filter_count > 0 %}
+          <span class="bg-gold text-ink text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">({{ active_filter_count }})</span>
+        {% endif %}
+      </button>
+
+      <!-- Desktop Sort Selector -->
+      <div class="hidden sm:flex items-center gap-2">
+        <label for="desktopSortSelect" class="text-xs sm:text-sm font-medium text-ink/70 shrink-0">Sort by:</label>
+        <select id="desktopSortSelect"
+                @change="applySort($event.target.value)"
+                class="bg-white border border-gold/30 rounded-xl px-3 py-2 text-xs sm:text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold cursor-pointer shadow-sm">
+          <option value="newest" {% if current_sort == 'newest' or not current_sort %}selected{% endif %}>Newest First</option>
+          <option value="popularity" {% if current_sort == 'popularity' %}selected{% endif %}>Popularity</option>
+          <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+          <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+          <option value="best_sellers" {% if current_sort == 'best_sellers' %}selected{% endif %}>Best Sellers</option>
+          <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest Rated</option>
+          <option value="discount_high" {% if current_sort == 'discount_high' %}selected{% endif %}>Discount: High to Low</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLIPKART MOBILE STICKY CONTROL BAR (Fixed at bottom on mobile viewports) -->
+  <div class="block sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gold/30 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] py-2.5 px-4 w-full">
+    <div class="grid grid-cols-2 gap-3 max-w-md mx-auto">
+      
+      <!-- SORT BY Button -->
+      <button type="button" @click="sortSheetOpen = true"
+              class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-champagne text-ink font-semibold text-xs border border-gold/30 active:scale-95 transition-all shadow-sm">
+        <svg class="w-4 h-4 text-gold-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M9 18h6"/></svg>
+        <span>SORT BY</span>
+      </button>
+
+      <!-- FILTER Button -->
+      <button type="button" @click="filterSheetOpen = true"
+              class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-ink text-cream font-semibold text-xs active:scale-95 transition-all shadow-sm relative">
+        <svg class="w-4 h-4 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        <span>FILTER</span>
+        {% if active_filter_count > 0 %}
+          <span class="bg-gold text-ink text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">({{ active_filter_count }})</span>
+        {% endif %}
+      </button>
+
+    </div>
+  </div>
+
+  <!-- FLIPKART MOBILE SLIDE-UP BOTTOM SHEET FOR SORT BY -->
+  <div x-show="sortSheetOpen"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       @click="sortSheetOpen = false"
+       class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end justify-center"
+       style="display: none;">
+
+    <div x-show="sortSheetOpen"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="translate-y-full"
+         x-transition:enter-end="translate-y-0"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="translate-y-0"
+         x-transition:leave-end="translate-y-full"
+         @click.stop
+         class="w-full max-w-lg bg-cream rounded-t-3xl border-t border-gold/40 p-6 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-gold/20">
+        <h3 class="font-serif text-lg font-bold text-ink tracking-wider">SORT BY</h3>
+        <button type="button" @click="sortSheetOpen = false" class="text-ink/60 hover:text-ink text-xl font-bold p-1">✕</button>
+      </div>
+
+      <div class="space-y-1 font-sans text-sm">
+        <button type="button" @click="applySort('newest'); sortSheetOpen = false;"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gold/15 transition-colors {% if current_sort == 'newest' or not current_sort %}bg-gold/20 font-bold text-gold-dark{% else %}text-ink{% endif %}">
+          <span>Relevance / Newest First</span>
+          {% if current_sort == 'newest' or not current_sort %}<span class="text-gold">✦</span>{% endif %}
+        </button>
+
+        <button type="button" @click="applySort('popularity'); sortSheetOpen = false;"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gold/15 transition-colors {% if current_sort == 'popularity' %}bg-gold/20 font-bold text-gold-dark{% else %}text-ink{% endif %}">
+          <span>Popularity</span>
+          {% if current_sort == 'popularity' %}<span class="text-gold">✦</span>{% endif %}
+        </button>
+
+        <button type="button" @click="applySort('price_low'); sortSheetOpen = false;"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gold/15 transition-colors {% if current_sort == 'price_low' %}bg-gold/20 font-bold text-gold-dark{% else %}text-ink{% endif %}">
+          <span>Price — Low to High</span>
+          {% if current_sort == 'price_low' %}<span class="text-gold">✦</span>{% endif %}
+        </button>
+
+        <button type="button" @click="applySort('price_high'); sortSheetOpen = false;"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gold/15 transition-colors {% if current_sort == 'price_high' %}bg-gold/20 font-bold text-gold-dark{% else %}text-ink{% endif %}">
+          <span>Price — High to Low</span>
+          {% if current_sort == 'price_high' %}<span class="text-gold">✦</span>{% endif %}
+        </button>
+
+        <button type="button" @click="applySort('best_sellers'); sortSheetOpen = false;"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gold/15 transition-colors {% if current_sort == 'best_sellers' %}bg-gold/20 font-bold text-gold-dark{% else %}text-ink{% endif %}">
+          <span>Best Sellers</span>
+          {% if current_sort == 'best_sellers' %}<span class="text-gold">✦</span>{% endif %}
+        </button>
+
+        <button type="button" @click="applySort('rating'); sortSheetOpen = false;"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gold/15 transition-colors {% if current_sort == 'rating' %}bg-gold/20 font-bold text-gold-dark{% else %}text-ink{% endif %}">
+          <span>Customer Rating</span>
+          {% if current_sort == 'rating' %}<span class="text-gold">✦</span>{% endif %}
+        </button>
+
+        <button type="button" @click="applySort('discount_high'); sortSheetOpen = false;"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gold/15 transition-colors {% if current_sort == 'discount_high' %}bg-gold/20 font-bold text-gold-dark{% else %}text-ink{% endif %}">
+          <span>Discount — High to Low</span>
+          {% if current_sort == 'discount_high' %}<span class="text-gold">✦</span>{% endif %}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- FLIPKART MOBILE / DESKTOP SLIDE-UP FILTER PANEL DRAWER -->
+  <div x-show="filterSheetOpen"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       @click="filterSheetOpen = false"
+       class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center"
+       style="display: none;">
+
+    <div x-show="filterSheetOpen"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="translate-y-full sm:scale-95"
+         x-transition:enter-end="translate-y-0 sm:scale-100"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="translate-y-0 sm:scale-100"
+         x-transition:leave-end="translate-y-full sm:scale-95"
+         @click.stop
+         class="w-full max-w-xl bg-white rounded-t-3xl sm:rounded-3xl border border-gold/30 shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
+      
+      <!-- Drawer Header -->
+      <div class="p-5 border-b border-gold/20 flex items-center justify-between bg-cream/80">
+        <div>
+          <h3 class="font-serif text-xl font-bold text-ink flex items-center gap-2">
+            <span>FILTERS</span>
+            {% if active_filter_count > 0 %}
+              <span class="text-xs bg-gold text-ink font-bold px-2 py-0.5 rounded-full font-mono">{{ active_filter_count }} applied</span>
+            {% endif %}
+          </h3>
+          <p class="text-xs text-ink/50 mt-0.5">Refine fine jewellery by purity, price, gemstone &amp; stock</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="{{ request.path }}?sort={{ current_sort }}" class="text-xs text-red-600 font-semibold hover:underline">Clear All</a>
+          <button type="button" @click="filterSheetOpen = false" class="text-ink/60 hover:text-ink text-xl font-bold p-1">✕</button>
+        </div>
+      </div>
+
+      <!-- Filter Form -->
+      <form id="catalogFilterSortForm" method="get" action="{{ request.path }}" class="flex-1 flex flex-col overflow-hidden">
+        <input type="hidden" name="sort" :value="currentSort">
+        {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+
+          <!-- 1. Availability -->
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-ink/60 mb-2">Availability</h4>
+            <label class="flex items-center gap-3 p-3 rounded-xl border border-ink/15 hover:border-gold cursor-pointer transition-colors bg-cream/30">
+              <input type="checkbox" name="in_stock" value="1" {% if in_stock_active %}checked{% endif %} class="w-4 h-4 text-gold rounded border-gold focus:ring-gold accent-gold">
+              <span class="text-sm font-medium text-ink">In Stock Only (Ready for immediate dispatch)</span>
+            </label>
+          </div>
+
+          <!-- 2. Price Range -->
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-ink/60 mb-2">Price Range (₹)</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] text-ink/50 mb-1">Min Price (₹)</label>
+                <input type="number" name="min_price" value="{{ min_price }}" placeholder="0" class="w-full border border-ink/15 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-gold">
+              </div>
+              <div>
+                <label class="block text-[11px] text-ink/50 mb-1">Max Price (₹)</label>
+                <input type="number" name="max_price" value="{{ max_price }}" placeholder="100000" class="w-full border border-ink/15 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-gold">
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Metal Purity -->
+          {% if available_purities %}
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-ink/60 mb-2">Metal Purity</h4>
+            <div class="flex flex-wrap gap-2">
+              {% for purity_code in available_purities %}
+              <label class="cursor-pointer">
+                <input type="checkbox" name="purity" value="{{ purity_code }}" {% if purity_code in selected_purities %}checked{% endif %} class="sr-only peer">
+                <span class="inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold border border-ink/15 text-ink/70 peer-checked:bg-gold/20 peer-checked:border-gold peer-checked:text-gold-dark peer-checked:font-bold transition-all">
+                  {% if purity_code == '14k' %}14K Gold
+                  {% elif purity_code == '18k' %}18K Gold
+                  {% elif purity_code == '22k' %}22K Gold
+                  {% elif purity_code == '24k' %}24K Gold
+                  {% elif purity_code == 'silver925' %}Sterling Silver 925
+                  {% elif purity_code == 'platinum' %}Platinum
+                  {% else %}{{ purity_code|upper }}
+                  {% endif %}
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- 4. Gemstones -->
+          {% if available_gemstones %}
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-ink/60 mb-2">Gemstones</h4>
+            <div class="flex flex-wrap gap-2">
+              {% for gem in available_gemstones %}
+              <label class="cursor-pointer">
+                <input type="checkbox" name="gemstone" value="{{ gem }}" {% if gem in selected_gemstones %}checked{% endif %} class="sr-only peer">
+                <span class="inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold border border-ink/15 text-ink/70 peer-checked:bg-gold/20 peer-checked:border-gold peer-checked:text-gold-dark peer-checked:font-bold transition-all">
+                  ✦ {{ gem }}
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- 5. Rating -->
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-ink/60 mb-2">Customer Rating</h4>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2.5 text-sm text-ink cursor-pointer">
+                <input type="radio" name="min_rating" value="4" {% if min_rating == '4' %}checked{% endif %} class="accent-gold">
+                <span class="flex items-center gap-1">
+                  <span class="text-gold font-bold">4.0 ★ &amp; above</span>
+                </span>
+              </label>
+              <label class="flex items-center gap-2.5 text-sm text-ink cursor-pointer">
+                <input type="radio" name="min_rating" value="3" {% if min_rating == '3' %}checked{% endif %} class="accent-gold">
+                <span class="flex items-center gap-1">
+                  <span class="text-gold font-bold">3.0 ★ &amp; above</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="p-4 border-t border-gold/20 bg-cream/80 flex items-center gap-3">
+          <a href="{{ request.path }}?sort={{ current_sort }}" class="w-1/3 py-3 rounded-full border border-ink/20 text-center font-medium text-xs sm:text-sm text-ink hover:border-gold transition-colors">Clear All</a>
+          <button type="submit" class="w-2/3 py-3 rounded-full bg-ink text-cream hover:bg-gold hover:text-ink font-semibold text-xs sm:text-sm transition-colors shadow-md cursor-pointer">
+            Apply Filters
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>

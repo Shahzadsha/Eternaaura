@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from accounts.models import Address
 from catalog.models import Category, Product
+from dashboard.models import StoreSettings
 from orders.models import Order, OrderItem
 from payments.models import Payment
 
@@ -13,6 +14,14 @@ User = get_user_model()
 
 class PaymentFlowTests(TestCase):
     def setUp(self):
+        StoreSettings.objects.update_or_create(
+            pk=1,
+            defaults={
+                "merchant_upi_id": "testmerchant@upi",
+                "merchant_name": "TestStore",
+                "whatsapp_notify_number": "919876543210",
+            },
+        )
         self.user = User.objects.create_user(
             username="testuser@eternaaura.com",
             email="testuser@eternaaura.com",
@@ -76,13 +85,13 @@ class PaymentFlowTests(TestCase):
         qr_url = reverse("payments:upi_qr", kwargs={"payment_id": payment.id})
         qr_res = self.client.get(qr_url)
         self.assertEqual(qr_res.status_code, 200)
-        self.assertEqual(qr_res["Content-Type"], "image/png")
+        self.assertEqual(qr_res.headers["Content-Type"], "image/png")
 
         # Test preview QR view
         preview_url = reverse("payments:upi_qr_preview") + "?am=12000.00&tr=TRXPREVIEW123"
         preview_res = self.client.get(preview_url)
         self.assertEqual(preview_res.status_code, 200)
-        self.assertEqual(preview_res["Content-Type"], "image/png")
+        self.assertEqual(preview_res.headers["Content-Type"], "image/png")
 
     def test_staff_payment_verification_action(self):
         self.client.login(username="staffuser@eternaaura.com", password="SecurePassword123!")

@@ -7,5 +7,6 @@ urlpatterns = [
     path("", views.CouponListView.as_view(), name="list"),
     path("apply/", views.ApplyCouponView.as_view(), name="apply"),
     path("remove/", views.RemoveCouponView.as_view(), name="remove"),
+    path("api/<str:code>/", views.CouponDetailApiView.as_view(), name="api_detail"),
 ]
 

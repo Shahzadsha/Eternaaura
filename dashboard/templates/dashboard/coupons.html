@@ -30,7 +30,7 @@
             <td class="py-3 px-3 font-mono font-bold text-gold-light">{{ c.code }}</td>
             <td class="py-3 px-3 capitalize text-gray-300">{{ c.get_discount_type_display }}</td>
             <td class="py-3 px-3 text-white font-semibold">
-              {% if c.discount_type == 'percent' %}{{ c.discount_value }}%{% else %}₹{{ c.discount_value }}{% endif %}
+              {{ c.formatted_discount_badge }}
             </td>
             <td class="py-3 px-3 text-gray-400">₹{{ c.min_order_value }}</td>
             <td class="py-3 px-3 text-gray-300 font-bold">{{ c.times_used }} {% if c.usage_limit %}/ {{ c.usage_limit }}{% endif %}</td>

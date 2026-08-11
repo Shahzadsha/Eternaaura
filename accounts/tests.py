@@ -86,4 +86,51 @@ class AccountsFlowTests(TestCase):
         self.assertEqual(self.user.phone_number, "+919999988888")
         self.assertEqual(self.user.gender, "female")
 
+    def test_registration_sends_otp_email(self):
+        from django.core import mail
+        response = self.client.post(
+            reverse("accounts:register"),
+            {
+                "username": "newreguser@eternaaura.com",
+                "email": "newreguser@eternaaura.com",
+                "first_name": "New",
+                "last_name": "Reg",
+                "phone_number": "+919876543210",
+                "password1": "SuperPassword123!",
+                "password2": "SuperPassword123!",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "Your EternaAura verification code")
+        self.assertIn("newreguser@eternaaura.com", mail.outbox[0].to)
+
+    def test_resend_otp_sends_email(self):
+        from django.core import mail
+        reg_res = self.client.post(
+            reverse("accounts:register"),
+            {
+                "username": "resenduser@eternaaura.com",
+                "email": "resenduser@eternaaura.com",
+                "first_name": "Resend",
+                "last_name": "User",
+                "phone_number": "+919876543211",
+                "password1": "SuperPassword123!",
+                "password2": "SuperPassword123!",
+            },
+        )
+        self.assertEqual(reg_res.status_code, 302)
+        mail.outbox.clear()
+
+        # Simulate waiting past cooldown in session
+        session = self.client.session
+        session["last_otp_resend_time"] = 0
+        session.save()
+
+        resend_res = self.client.get(reverse("accounts:resend_otp"))
+        self.assertEqual(resend_res.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "Your EternaAura verification code")
+        self.assertIn("resenduser@eternaaura.com", mail.outbox[0].to)
+
 

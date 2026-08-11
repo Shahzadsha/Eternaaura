@@ -37,7 +37,19 @@ class Category(TimeStamped):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)[:100] or "category"
+            slug = base_slug
+            counter = 1
+            qs = Category.objects.filter(slug=slug)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            while qs.exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+                qs = Category.objects.filter(slug=slug)
+                if self.pk:
+                    qs = qs.exclude(pk=self.pk)
+            self.slug = slug
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -57,8 +69,23 @@ class Collection(TimeStamped):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)[:120] or "collection"
+            slug = base_slug
+            counter = 1
+            qs = Collection.objects.filter(slug=slug)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            while qs.exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+                qs = Collection.objects.filter(slug=slug)
+                if self.pk:
+                    qs = qs.exclude(pk=self.pk)
+            self.slug = slug
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("catalog:collection_detail", kwargs={"slug": self.slug})
 
     def __str__(self):
         return self.name
@@ -118,7 +145,19 @@ class Product(TimeStamped):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)[:220]
+            base_slug = slugify(self.name)[:200] or "product"
+            slug = base_slug
+            counter = 1
+            qs = Product.objects.filter(slug=slug)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            while qs.exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+                qs = Product.objects.filter(slug=slug)
+                if self.pk:
+                    qs = qs.exclude(pk=self.pk)
+            self.slug = slug
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -227,8 +266,6 @@ class HeroBanner(TimeStamped):
     title = models.CharField(max_length=150)
     subtitle = models.CharField(max_length=250, blank=True)
     image = models.ImageField(upload_to="banners/", validators=[validate_image_extension, validate_image_size])
-    cta_label = models.CharField(max_length=50, default="Shop Now")
-    cta_url = models.CharField(max_length=300, blank=True)
     display_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 

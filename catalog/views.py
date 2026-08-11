@@ -13,34 +13,144 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["banners"] = HeroBanner.objects.filter(is_active=True)
-        ctx["categories"] = Category.objects.filter(is_active=True, parent__isnull=True)
+        ctx["banners"] = HeroBanner.objects.filter(is_active=True).order_by("display_order", "-created_at")
+        ctx["categories"] = Category.objects.filter(is_active=True, parent__isnull=True).order_by("display_order", "name")
         ctx["new_arrivals"] = Product.objects.filter(is_published=True, is_new_arrival=True)[:8]
         ctx["best_sellers"] = Product.objects.filter(is_published=True, is_best_seller=True)[:8]
         ctx["trending"] = Product.objects.filter(is_published=True, is_trending=True)[:8]
-        ctx["bridal"] = Collection.objects.filter(slug="bridal-collection").first()
-        ctx["daily_wear"] = Collection.objects.filter(slug="daily-wear-collection").first()
+        active_collections = list(Collection.objects.filter(is_active=True))
+        ctx["collections"] = active_collections
+        ctx["bridal"] = Collection.objects.filter(is_active=True, slug="bridal-collection").first() or (active_collections[0] if active_collections else None)
+        ctx["daily_wear"] = Collection.objects.filter(is_active=True, slug="daily-wear-collection").first() or (active_collections[1] if len(active_collections) > 1 else None)
         return ctx
 
 
-def apply_sorting(queryset, sort_param):
+def apply_catalog_filtering_and_sorting(queryset, request):
+    qs = queryset
+    GET = request.GET if hasattr(request, 'GET') else request
+
+    def _get_list(param):
+        if hasattr(GET, "getlist"):
+            return GET.getlist(param)
+        val = GET.get(param)
+        if not val:
+            return []
+        return [val] if isinstance(val, str) else val
+
+    # 1. In Stock filter
+    if GET.get("in_stock") == "1":
+        qs = qs.filter(stock_quantity__gt=0)
+
+    # 2. Price Range filter
+    min_price = GET.get("min_price")
+    max_price = GET.get("max_price")
+    if min_price:
+        try:
+            qs = qs.filter(price__gte=float(min_price))
+        except (ValueError, TypeError):
+            pass
+    if max_price:
+        try:
+            qs = qs.filter(price__lte=float(max_price))
+        except (ValueError, TypeError):
+            pass
+
+    # 3. Metal Purity filter (supports multiple selections)
+    purities = _get_list("purity")
+    if purities:
+        qs = qs.filter(metal_purity__in=purities)
+
+    # 4. Gemstone filter (supports multiple selections)
+    gemstones = _get_list("gemstone")
+    if gemstones:
+        qs = qs.filter(gemstone__in=gemstones)
+
+    # 5. Rating filter
+    min_rating = GET.get("min_rating")
+    if min_rating:
+        try:
+            qs = qs.filter(average_rating__gte=float(min_rating))
+        except (ValueError, TypeError):
+            pass
+
+    # 6. Sorting
+    sort_param = GET.get("sort", "")
     sort_map = {
         "newest": "-created_at",
         "oldest": "created_at",
         "price_low": "price",
         "price_high": "-price",
+        "popularity": ("-is_best_seller", "-review_count", "-created_at"),
         "best_sellers": ("-is_best_seller", "-created_at"),
         "trending": ("-is_trending", "-created_at"),
         "rating": ("-average_rating", "-review_count", "-created_at"),
         "reviews": ("-review_count", "-average_rating", "-created_at"),
+        "discount_high": ("-compare_at_price", "-created_at"),
         "name_asc": "name",
         "name_desc": "-name",
-        "name": "name",
     }
     ordering = sort_map.get(sort_param, "-created_at")
     if isinstance(ordering, tuple):
-        return queryset.order_by(*ordering)
-    return queryset.order_by(ordering)
+        qs = qs.order_by(*ordering)
+    else:
+        qs = qs.order_by(ordering)
+
+    return qs
+
+
+def build_catalog_context(base_qs, request):
+    # Fetch available purities & gemstones from base_qs
+    purities_raw = list(base_qs.values_list("metal_purity", flat=True).distinct())
+    available_purities = [p for p in purities_raw if p]
+
+    gemstones_raw = list(base_qs.values_list("gemstone", flat=True).distinct())
+    available_gemstones = [g for g in gemstones_raw if g]
+
+    filtered_qs = apply_catalog_filtering_and_sorting(base_qs, request)
+
+    GET = request.GET if hasattr(request, 'GET') else request
+
+    def _get_list(param):
+        if hasattr(GET, "getlist"):
+            return GET.getlist(param)
+        val = GET.get(param)
+        if not val:
+            return []
+        return [val] if isinstance(val, str) else val
+
+    selected_purities = _get_list("purity")
+    selected_gemstones = _get_list("gemstone")
+
+    active_filters = 0
+    if GET.get("in_stock") == "1":
+        active_filters += 1
+    if GET.get("min_price") or GET.get("max_price"):
+        active_filters += 1
+    if selected_purities:
+        active_filters += len(selected_purities)
+    if selected_gemstones:
+        active_filters += len(selected_gemstones)
+    if GET.get("min_rating"):
+        active_filters += 1
+
+    return {
+        "products": filtered_qs,
+        "matching_count": filtered_qs.count(),
+        "current_sort": GET.get("sort", "newest"),
+        "in_stock_active": GET.get("in_stock") == "1",
+        "min_price": GET.get("min_price", ""),
+        "max_price": GET.get("max_price", ""),
+        "selected_purities": selected_purities,
+        "selected_gemstones": selected_gemstones,
+        "min_rating": GET.get("min_rating", ""),
+        "active_filter_count": active_filters,
+        "available_purities": available_purities,
+        "available_gemstones": available_gemstones,
+    }
+
+
+def apply_sorting(queryset, sort_param):
+    return apply_catalog_filtering_and_sorting(queryset, {"sort": sort_param})
 
 
 class CategoryDetailView(DetailView):
@@ -50,10 +160,9 @@ class CategoryDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        qs = self.object.products.filter(is_published=True)
-        sort = self.request.GET.get("sort", "")
-        ctx["products"] = apply_sorting(qs, sort)
-        ctx["current_sort"] = sort
+        base_qs = self.object.products.filter(is_published=True)
+        catalog_ctx = build_catalog_context(base_qs, self.request)
+        ctx.update(catalog_ctx)
         return ctx
 
 
@@ -62,12 +171,14 @@ class CollectionDetailView(DetailView):
     template_name = "catalog/collection_detail.html"
     context_object_name = "collection"
 
+    def get_queryset(self):
+        return Collection.objects.filter(is_active=True)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        qs = self.object.products.filter(is_published=True)
-        sort = self.request.GET.get("sort", "")
-        ctx["products"] = apply_sorting(qs, sort)
-        ctx["current_sort"] = sort
+        base_qs = self.object.products.filter(is_published=True)
+        catalog_ctx = build_catalog_context(base_qs, self.request)
+        ctx.update(catalog_ctx)
         return ctx
 
 
@@ -91,6 +202,13 @@ class ProductDetailView(DetailView):
         ).exclude(pk=product.pk).order_by("-is_best_seller", "-average_rating")[:8]
         manual_related = product.manually_related_products.filter(is_published=True)
         ctx["related_products"] = manual_related if manual_related.exists() else related
+
+        # Fetch sibling color variant products matching exact name AND category
+        ctx["color_variant_products"] = Product.objects.filter(
+            is_published=True,
+            name=product.name,
+            category=product.category
+        ).prefetch_related("images", "variants", "variants__values").order_by("created_at")
 
         review_sort = self.request.GET.get("review_sort", "newest")
         reviews_qs = product.reviews.filter(is_approved=True).select_related("user").prefetch_related("images")
@@ -141,13 +259,22 @@ class SearchView(ListView):
                 | Q(category__name__icontains=query)
                 | Q(sku__iexact=query)
             )
-        sort = self.request.GET.get("sort", "")
-        return apply_sorting(qs, sort)
+        return apply_catalog_filtering_and_sorting(qs, self.request)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["current_sort"] = self.request.GET.get("sort", "")
-        ctx["query"] = self.request.GET.get("q", "").strip()
+        query = self.request.GET.get("q", "").strip()
+        base_qs = Product.objects.filter(is_published=True)
+        if query:
+            base_qs = base_qs.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(category__name__icontains=query)
+                | Q(sku__iexact=query)
+            )
+        catalog_ctx = build_catalog_context(base_qs, self.request)
+        ctx.update(catalog_ctx)
+        ctx["query"] = query
         return ctx
 
 
@@ -197,17 +324,19 @@ class BaseShowcaseView(ListView):
     paginate_by = 16
 
     def get_queryset(self):
-        qs = Product.objects.filter(is_published=True)
-        qs = self.filter_products(qs)
-        sort = self.request.GET.get("sort", "")
-        return apply_sorting(qs, sort)
+        base_qs = Product.objects.filter(is_published=True)
+        filtered_base = self.filter_products(base_qs)
+        return apply_catalog_filtering_and_sorting(filtered_base, self.request)
 
     def filter_products(self, qs):
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["current_sort"] = self.request.GET.get("sort", "")
+        base_qs = Product.objects.filter(is_published=True)
+        filtered_base = self.filter_products(base_qs)
+        catalog_ctx = build_catalog_context(filtered_base, self.request)
+        ctx.update(catalog_ctx)
         return ctx
 
 

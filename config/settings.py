@@ -25,33 +25,30 @@ if env_path.exists():
 # ---------------------------------------------------------------------------
 try:
     from decouple import config
-    SECRET_KEY = config("DJANGO_SECRET_KEY", default=None)
 except Exception:
-    SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+    def config(option, default=None, cast=None):
+        val = os.environ.get(option, default)
+        if val is None:
+            val = default
+        if cast and val is not None:
+            if cast is bool:
+                return str(val).lower() in ("true", "1", "yes")
+            return cast(val)
+        return val
+
+SECRET_KEY = config("DJANGO_SECRET_KEY", default=None) or os.environ.get("DJANGO_SECRET_KEY")
 
 if not SECRET_KEY:
-    SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY environment variable is not set. Refusing to run with an insecure key.")
 
-if not SECRET_KEY:
-    SECRET_KEY = "django-insecure-eterna-aura-dev-key-change-in-production"
+DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
 
-try:
-    DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
-except Exception:
-    DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
-
-try:
-    raw_hosts = config("DJANGO_ALLOWED_HOSTS", default="127.0.0.1,localhost,testserver")
-except Exception:
-    raw_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
+raw_hosts = config("DJANGO_ALLOWED_HOSTS", default="127.0.0.1,localhost,testserver")
 ALLOWED_HOSTS = [host.strip() for host in raw_hosts.split(",") if host.strip()]
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
 
-try:
-    raw_csrf = config("CSRF_TRUSTED_ORIGINS", default="")
-except Exception:
-    raw_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+raw_csrf = config("CSRF_TRUSTED_ORIGINS", default="")
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in raw_csrf.split(",") if origin.strip()]
 
 # ---------------------------------------------------------------------------
@@ -109,6 +106,7 @@ TEMPLATES = [
                 "cart.context_processors.cart_summary",
                 "catalog.context_processors.wishlist_summary",
                 "catalog.context_processors.nav_categories_processor",
+                "catalog.context_processors.store_settings_processor",
             ],
 
         },
@@ -211,9 +209,6 @@ RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "")
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
-
-MERCHANT_UPI_ID = os.environ.get("MERCHANT_UPI_ID", "9847549961@superyes")
-MERCHANT_NAME = os.environ.get("MERCHANT_NAME", "EternaAura")
 
 # ---------------------------------------------------------------------------
 # Logging Configuration

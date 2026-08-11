@@ -2,44 +2,131 @@
 {% block page_title %}Collections Management{% endblock %}
 
 {% block content %}
-<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
-  <div class="flex items-center justify-between border-b border-white/10 pb-6 mb-6">
-    <h2 class="font-serif text-lg text-white font-medium">Jewellery Collections</h2>
-    <a href="{% url 'dashboard:collection_create' %}" class="px-4 py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition">
-      + New Collection
-    </a>
+<div class="space-y-6">
+
+  <!-- Header & Primary Action -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+    <div>
+      <h1 class="font-serif text-2xl sm:text-3xl text-white font-bold tracking-tight">Jewellery Collections</h1>
+      <p class="text-xs text-gray-400 mt-1">Curate showcase collections, seasonal lines, and promotional showcases</p>
+    </div>
+    <div>
+      <a href="{% url 'dashboard:collection_create' %}" 
+         class="px-5 py-2.5 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs tracking-wide transition shadow-lg shadow-gold/10 flex items-center gap-2">
+        <span class="text-base font-bold">+</span> Create Collection
+      </a>
+    </div>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="w-full text-left text-xs">
-      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
-        <tr>
-          <th class="py-3 px-3">Collection Name</th>
-          <th class="py-3 px-3">Slug</th>
-          <th class="py-3 px-3">Products Count</th>
-          <th class="py-3 px-3">Featured</th>
-          <th class="py-3 px-3 text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-white/5">
-        {% for c in collections %}
-          <tr class="hover:bg-white/5 transition">
-            <td class="py-3 px-3 text-white font-medium">{{ c.name }}</td>
-            <td class="py-3 px-3 font-mono text-gray-400">{{ c.slug }}</td>
-            <td class="py-3 px-3 text-gold-light font-bold">{{ c.product_count }}</td>
-            <td class="py-3 px-3">
-              {% if c.is_featured %}<span class="px-2 py-0.5 rounded bg-gold/20 text-gold-light font-bold">Featured</span>{% else %}<span class="text-gray-500">Standard</span>{% endif %}
-            </td>
-            <td class="py-3 px-3 text-right space-x-2">
-              <a href="{% url 'dashboard:collection_edit' c.id %}" class="text-gold hover:underline">Edit</a>
-              <a href="{% url 'dashboard:collection_delete' c.id %}" class="text-rose-400 hover:underline">Delete</a>
-            </td>
+  <!-- Search Bar -->
+  <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+    <form method="get" class="w-full sm:w-80 flex items-center gap-2">
+      <div class="relative w-full">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search collections by name or slug..."
+               class="w-full bg-panel2 border border-white/15 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold">
+        <span class="absolute left-3 top-2.5 text-gray-500 text-xs">🔍</span>
+      </div>
+      {% if q %}
+        <a href="{% url 'dashboard:collections' %}" class="text-xs text-gray-400 hover:text-white px-2 py-1 bg-white/5 rounded-lg">Clear</a>
+      {% endif %}
+    </form>
+    <div class="text-xs text-gray-400 font-medium">
+      Total Collections: <span class="text-gold font-mono font-bold">{{ page_obj.paginator.count|default:collections.count }}</span>
+    </div>
+  </div>
+
+  <!-- Collections Table Card -->
+  <div class="bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-panel2/60 text-gray-400 uppercase text-[10px] tracking-wider border-b border-white/10">
+          <tr>
+            <th class="py-3.5 px-4">Banner</th>
+            <th class="py-3.5 px-4">Collection Name</th>
+            <th class="py-3.5 px-4">URL Slug</th>
+            <th class="py-3.5 px-4">Products</th>
+            <th class="py-3.5 px-4">Status</th>
+            <th class="py-3.5 px-4">Created Date</th>
+            <th class="py-3.5 px-4 text-right">Actions</th>
           </tr>
-        {% empty %}
-          <tr><td colspan="5" class="py-8 text-center text-gray-500">No collections created yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-white/5 text-gray-300">
+          {% for c in collections %}
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-3 px-4">
+                <div class="w-16 h-10 rounded-lg bg-black/40 overflow-hidden border border-white/10 flex items-center justify-center">
+                  {% if c.banner_image %}
+                    <img src="{{ c.banner_image.url }}" alt="{{ c.name }}" class="w-full h-full object-cover">
+                  {% else %}
+                    <span class="text-[10px] text-gray-500 font-mono">No Banner</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <p class="text-white font-semibold text-sm">{{ c.name }}</p>
+                {% if c.description %}
+                  <p class="text-[11px] text-gray-400 line-clamp-1 max-w-xs">{{ c.description }}</p>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 font-mono text-gray-400 text-[11px]">{{ c.slug }}</td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold font-mono font-bold text-[11px]">
+                  <span>💎</span> {{ c.product_count }} items
+                </span>
+              </td>
+              <td class="py-3 px-4">
+                {% if c.is_active %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold text-[11px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/30 text-gray-400 font-semibold text-[11px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span> Disabled
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-gray-400 text-[11px]">{{ c.created_at|date:"M d, Y" }}</td>
+              <td class="py-3 px-4 text-right space-x-2">
+                <a href="{% url 'dashboard:collection_edit' c.id %}" 
+                   class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-gold hover:text-black border border-white/10 text-gray-300 font-medium text-xs transition">
+                  Edit
+                </a>
+                <a href="{% url 'dashboard:collection_delete' c.id %}" 
+                   class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-medium text-xs transition">
+                  Delete
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="py-12 text-center text-gray-400">
+                <div class="max-w-xs mx-auto space-y-2">
+                  <p class="text-2xl">💎</p>
+                  <p class="font-medium text-white text-sm">No collections found</p>
+                  <p class="text-xs text-gray-500">Create your first collection or try a different search filter.</p>
+                  <a href="{% url 'dashboard:collection_create' %}" class="inline-block mt-2 px-4 py-2 rounded-xl bg-gold text-black font-semibold text-xs">+ Create Collection</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+      <div class="flex items-center justify-between px-6 py-4 border-t border-white/10 text-xs text-gray-400 bg-panel2/40">
+        <div>Page {{ page_obj.number }} of {{ paginator.num_pages }}</div>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}

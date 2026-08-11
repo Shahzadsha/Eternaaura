@@ -85,7 +85,6 @@
             <a href="{{ cat.get_absolute_url }}" @click="offcanvasOpen = false"
                class="flex items-center justify-between px-3 py-2 text-xs rounded-lg text-cream/70 hover:text-gold-light hover:bg-white/5 transition-colors">
               <span>{{ cat.name }}</span>
-              <span class="text-[10px] text-gold/60 uppercase">Explore</span>
             </a>
 
             <!-- Nested child categories support -->
@@ -122,12 +121,38 @@
         <span>Best Sellers</span>
       </a>
 
-      <!-- 6. Trending Collections -->
+      <!-- 6. Collections (Expandable Accordion dynamically loaded from DB) -->
+      {% if nav_collections %}
+      <div class="rounded-xl border border-white/5 overflow-hidden bg-white/[0.02]" x-data="{ collectionsOpen: false }">
+        <button @click="collectionsOpen = !collectionsOpen"
+                class="w-full flex items-center justify-between px-4 py-3 text-cream/90 hover:text-gold-light hover:bg-white/5 transition-colors font-medium text-left">
+          <div class="flex items-center gap-3">
+            <span class="text-gold">💎</span>
+            <span>Collections</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" :class="collectionsOpen ? 'rotate-180 text-gold-light' : 'text-cream/50'"
+               class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+          </svg>
+        </button>
+
+        <div x-show="collectionsOpen" x-transition class="bg-black/40 px-3 py-2 space-y-1 border-t border-white/5" style="display: none;">
+          {% for col in nav_collections %}
+          <a href="{{ col.get_absolute_url }}" @click="offcanvasOpen = false"
+             class="flex items-center justify-between px-3 py-2 text-xs rounded-lg text-cream/70 hover:text-gold-light hover:bg-white/5 transition-colors">
+            <span>{{ col.name }}</span>
+            <span class="text-[10px] text-gold/60 uppercase">View</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
       <a href="{% url 'catalog:trending' %}" @click="offcanvasOpen = false"
          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if 'trending-collections' in request.path %}bg-gold/15 text-gold-light font-semibold border border-gold/30{% else %}text-cream/80 hover:bg-white/5 hover:text-gold-light{% endif %}">
         <span class="text-gold/80">✦</span>
         <span>Trending Collections</span>
       </a>
+      {% endif %}
 
 
       <!-- 7. Coupon Codes -->

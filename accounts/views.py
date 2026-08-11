@@ -45,6 +45,17 @@ class RegisterView(View):
                 purpose=OTPVerification.Purpose.REGISTRATION,
                 expires_at=timezone.now() + timezone.timedelta(minutes=10),
             )
+            send_mail(
+                subject="Your EternaAura verification code",
+                message=(
+                    f"Hello {user.first_name or user.username},\n\n"
+                    f"Your EternaAura verification code is: {code}\n\n"
+                    f"This code will expire in 10 minutes."
+                ),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
             request.session["pending_verification_user_id"] = str(user.id)
             request.session["otp_attempts"] = 0
             messages.success(request, "Account created. Check your email for the OTP to verify your account.")
@@ -222,13 +233,25 @@ class ResendOTPView(View):
             messages.error(request, f"Please wait {remaining} seconds before requesting a new code.")
             return redirect("accounts:verify_otp")
 
+        user = get_object_or_404(User, pk=pending_user_id)
         request.session["last_otp_resend_time"] = now
         code = OTPVerification.generate_code()
         OTPVerification.objects.create(
-            user_id=pending_user_id,
+            user=user,
             code=code,
             purpose=OTPVerification.Purpose.REGISTRATION,
             expires_at=timezone.now() + timezone.timedelta(minutes=10),
+        )
+        send_mail(
+            subject="Your EternaAura verification code",
+            message=(
+                f"Hello {user.first_name or user.username},\n\n"
+                f"Your new EternaAura verification code is: {code}\n\n"
+                f"This code will expire in 10 minutes."
+            ),
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
+            recipient_list=[user.email],
+            fail_silently=False,
         )
         request.session["otp_attempts"] = 0
         messages.success(request, "A new code has been sent.")
@@ -261,7 +284,7 @@ class PasswordResetRequestView(View):
                     ),
                     from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
                     recipient_list=[user.email],
-                    fail_silently=True,
+                    fail_silently=not settings.DEBUG,
                 )
         messages.success(request, "If that email exists, a reset link has been sent.")
         return redirect("accounts:login")

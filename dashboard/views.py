@@ -24,7 +24,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from accounts.models import Address, User
-from catalog.forms import CategoryForm, HeroBannerForm, ProductForm
+from catalog.forms import CategoryForm, CollectionForm, CouponForm, HeroBannerForm, ProductForm
 from catalog.models import Category, Collection, HeroBanner, Product, ProductImage, Wishlist
 from coupons.models import Coupon
 from dashboard.models import AuditLog, LoginAttempt, StoreSetting
@@ -195,6 +195,7 @@ class ProductCreateView(SuperAdminRequiredMixin, CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         self._save_uploaded_images()
+        self._save_specifications()
         messages.success(self.request, f'Product "{self.object.name}" was created successfully.')
         return response
 
@@ -208,9 +209,74 @@ class ProductCreateView(SuperAdminRequiredMixin, CreateView):
                 is_primary=(i == 0 and not self.object.images.exists()),
             )
 
+    def _save_specifications(self):
+        import re
+        spec_names = self.request.POST.getlist("spec_names[]")
+        spec_values = self.request.POST.getlist("spec_values[]")
+
+        spec_dict = {}
+        metal_purity_val = ""
+        metal_weight_val = None
+        gemstone_val = ""
+        gemstone_details_val = ""
+
+        for name, val in zip(spec_names, spec_values):
+            name_clean = name.strip()
+            val_clean = val.strip()
+            if name_clean and val_clean:
+                spec_dict[name_clean] = val_clean
+                
+                name_lower = name_clean.lower()
+                if "purity" in name_lower or name_lower == "metal purity":
+                    metal_purity_val = val_clean
+                elif "weight" in name_lower or name_lower == "metal weight":
+                    m = re.search(r"[-+]?\d*\.\d+|\d+", val_clean)
+                    if m:
+                        try:
+                            metal_weight_val = float(m.group(0))
+                        except ValueError:
+                            pass
+                elif "gemstone type" in name_lower or name_lower == "gemstone":
+                    gemstone_val = val_clean
+                elif "gemstone details" in name_lower or "gemstone spec" in name_lower:
+                    gemstone_details_val = val_clean
+
+        self.object.specifications = spec_dict
+        self.object.metal_purity = metal_purity_val
+        self.object.metal_weight_grams = metal_weight_val
+        self.object.gemstone = gemstone_val
+        self.object.gemstone_details = gemstone_details_val
+        self.object.save(update_fields=["specifications", "metal_purity", "metal_weight_grams", "gemstone", "gemstone_details"])
+
+    def get_initial_specs(self):
+        initial_specs = []
+        if self.object and self.object.pk:
+            if self.object.specifications:
+                for k, v in self.object.specifications.items():
+                    initial_specs.append({"name": k, "value": str(v)})
+            else:
+                if self.object.metal_purity:
+                    initial_specs.append({"name": "Metal Purity", "value": self.object.get_metal_purity_display()})
+                if self.object.metal_weight_grams:
+                    initial_specs.append({"name": "Metal Weight (Grams)", "value": f"{self.object.metal_weight_grams} g"})
+                if self.object.gemstone:
+                    initial_specs.append({"name": "Gemstone Type", "value": self.object.gemstone})
+                if self.object.gemstone_details:
+                    initial_specs.append({"name": "Gemstone Specifications", "value": self.object.gemstone_details})
+
+        if not initial_specs:
+            initial_specs = [
+                {"name": "Metal Purity", "value": ""},
+                {"name": "Metal Weight (Grams)", "value": ""},
+                {"name": "Gemstone Type", "value": ""},
+                {"name": "Gemstone Specifications", "value": ""},
+            ]
+        return initial_specs
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["is_edit"] = False
+        ctx["initial_specs"] = self.get_initial_specs()
         return ctx
 
 
@@ -231,13 +297,79 @@ class ProductUpdateView(SuperAdminRequiredMixin, UpdateView):
                 display_order=start + i,
                 is_primary=(start == 0 and i == 0),
             )
+        self._save_specifications()
         messages.success(self.request, f'Product "{self.object.name}" was updated.')
         return response
+
+    def _save_specifications(self):
+        import re
+        spec_names = self.request.POST.getlist("spec_names[]")
+        spec_values = self.request.POST.getlist("spec_values[]")
+
+        spec_dict = {}
+        metal_purity_val = ""
+        metal_weight_val = None
+        gemstone_val = ""
+        gemstone_details_val = ""
+
+        for name, val in zip(spec_names, spec_values):
+            name_clean = name.strip()
+            val_clean = val.strip()
+            if name_clean and val_clean:
+                spec_dict[name_clean] = val_clean
+                
+                name_lower = name_clean.lower()
+                if "purity" in name_lower or name_lower == "metal purity":
+                    metal_purity_val = val_clean
+                elif "weight" in name_lower or name_lower == "metal weight":
+                    m = re.search(r"[-+]?\d*\.\d+|\d+", val_clean)
+                    if m:
+                        try:
+                            metal_weight_val = float(m.group(0))
+                        except ValueError:
+                            pass
+                elif "gemstone type" in name_lower or name_lower == "gemstone":
+                    gemstone_val = val_clean
+                elif "gemstone details" in name_lower or "gemstone spec" in name_lower:
+                    gemstone_details_val = val_clean
+
+        self.object.specifications = spec_dict
+        self.object.metal_purity = metal_purity_val
+        self.object.metal_weight_grams = metal_weight_val
+        self.object.gemstone = gemstone_val
+        self.object.gemstone_details = gemstone_details_val
+        self.object.save(update_fields=["specifications", "metal_purity", "metal_weight_grams", "gemstone", "gemstone_details"])
+
+    def get_initial_specs(self):
+        initial_specs = []
+        if self.object and self.object.pk:
+            if self.object.specifications:
+                for k, v in self.object.specifications.items():
+                    initial_specs.append({"name": k, "value": str(v)})
+            else:
+                if self.object.metal_purity:
+                    initial_specs.append({"name": "Metal Purity", "value": self.object.get_metal_purity_display()})
+                if self.object.metal_weight_grams:
+                    initial_specs.append({"name": "Metal Weight (Grams)", "value": f"{self.object.metal_weight_grams} g"})
+                if self.object.gemstone:
+                    initial_specs.append({"name": "Gemstone Type", "value": self.object.gemstone})
+                if self.object.gemstone_details:
+                    initial_specs.append({"name": "Gemstone Specifications", "value": self.object.gemstone_details})
+
+        if not initial_specs:
+            initial_specs = [
+                {"name": "Metal Purity", "value": ""},
+                {"name": "Metal Weight (Grams)", "value": ""},
+                {"name": "Gemstone Type", "value": ""},
+                {"name": "Gemstone Specifications", "value": ""},
+            ]
+        return initial_specs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["is_edit"] = True
         ctx["existing_images"] = self.object.images.all()
+        ctx["initial_specs"] = self.get_initial_specs()
         return ctx
 
 
@@ -278,9 +410,20 @@ class CategoryManagementView(SuperAdminRequiredMixin, ListView):
     model = Category
     template_name = "dashboard/categories.html"
     context_object_name = "categories"
+    paginate_by = 15
 
     def get_queryset(self):
-        return Category.objects.annotate(product_count=Count("products")).order_by("display_order", "name")
+        qs = Category.objects.annotate(product_count=Count("products"))
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(slug__icontains=q) | Q(description__icontains=q))
+        return qs.order_by("display_order", "name")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["q"] = self.request.GET.get("q", "")
+        ctx["total_categories"] = Category.objects.count()
+        return ctx
 
 
 class CategoryCreateView(SuperAdminRequiredMixin, CreateView):
@@ -325,14 +468,24 @@ class CollectionManagementView(SuperAdminRequiredMixin, ListView):
     model = Collection
     template_name = "dashboard/collections.html"
     context_object_name = "collections"
+    paginate_by = 15
 
     def get_queryset(self):
-        return Collection.objects.annotate(product_count=Count("products")).order_by("name")
+        qs = Collection.objects.annotate(product_count=Count("products"))
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(slug__icontains=q) | Q(description__icontains=q))
+        return qs.order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["q"] = self.request.GET.get("q", "")
+        return ctx
 
 
 class CollectionCreateView(SuperAdminRequiredMixin, CreateView):
     model = Collection
-    fields = ["name", "slug", "description", "banner_image", "is_active"]
+    form_class = CollectionForm
     template_name = "dashboard/collection_form.html"
     success_url = reverse_lazy("dashboard:collections")
 
@@ -343,9 +496,14 @@ class CollectionCreateView(SuperAdminRequiredMixin, CreateView):
 
 class CollectionUpdateView(SuperAdminRequiredMixin, UpdateView):
     model = Collection
-    fields = ["name", "slug", "description", "banner_image", "is_active"]
+    form_class = CollectionForm
     template_name = "dashboard/collection_form.html"
     success_url = reverse_lazy("dashboard:collections")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["collection_products"] = self.object.products.select_related("category").all()[:12]
+        return ctx
 
     def form_valid(self, form):
         messages.success(self.request, f'Collection "{form.instance.name}" updated.')
@@ -375,12 +533,28 @@ class InventoryView(SuperAdminRequiredMixin, ListView):
 
     def get_queryset(self):
         filter_type = self.request.GET.get("filter", "all")
-        qs = Product.objects.all().select_related("category")
+        q = self.request.GET.get("q", "").strip()
+        qs = Product.objects.all().select_related("category").prefetch_related("images")
+
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(sku__icontains=q))
+
         if filter_type == "low_stock":
             qs = qs.filter(stock_quantity__lte=5, stock_quantity__gt=0)
         elif filter_type == "out_of_stock":
             qs = qs.filter(stock_quantity=0)
+
         return qs.order_by("stock_quantity")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["total_products"] = Product.objects.count()
+        ctx["in_stock_count"] = Product.objects.filter(stock_quantity__gt=5).count()
+        ctx["low_stock_count"] = Product.objects.filter(stock_quantity__lte=5, stock_quantity__gt=0).count()
+        ctx["out_of_stock_count"] = Product.objects.filter(stock_quantity=0).count()
+        ctx["selected_filter"] = self.request.GET.get("filter", "all")
+        ctx["q"] = self.request.GET.get("q", "")
+        return ctx
 
     def post(self, request):
         product_id = request.POST.get("product_id")
@@ -403,7 +577,29 @@ class ReviewModerationView(SuperAdminRequiredMixin, ListView):
     paginate_by = 15
 
     def get_queryset(self):
-        return Review.objects.all().select_related("product", "user").order_by("-created_at")
+        qs = Review.objects.all().select_related("product", "user").prefetch_related("product__images")
+        status = self.request.GET.get("status", "")
+        rating = self.request.GET.get("rating", "")
+
+        if status == "pending":
+            qs = qs.filter(is_approved=False)
+        elif status == "approved":
+            qs = qs.filter(is_approved=True)
+
+        if rating and rating.isdigit():
+            qs = qs.filter(rating=int(rating))
+
+        return qs.order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["total_reviews"] = Review.objects.count()
+        ctx["pending_count"] = Review.objects.filter(is_approved=False).count()
+        ctx["approved_count"] = Review.objects.filter(is_approved=True).count()
+        ctx["avg_rating"] = Review.objects.aggregate(avg=Avg("rating"))["avg"] or 0.0
+        ctx["selected_status"] = self.request.GET.get("status", "")
+        ctx["selected_rating"] = self.request.GET.get("rating", "")
+        return ctx
 
 
 class ReviewToggleApproveView(SuperAdminRequiredMixin, View):
@@ -655,11 +851,7 @@ class CouponListView(SuperAdminRequiredMixin, ListView):
 
 class CouponCreateView(SuperAdminRequiredMixin, CreateView):
     model = Coupon
-    fields = [
-        "code", "description", "discount_type", "discount_value",
-        "min_order_value", "max_discount_amount", "usage_limit",
-        "user_limit", "valid_from", "valid_until", "is_active",
-    ]
+    form_class = CouponForm
     template_name = "dashboard/coupon_form.html"
     success_url = reverse_lazy("dashboard:coupons")
 
@@ -670,11 +862,7 @@ class CouponCreateView(SuperAdminRequiredMixin, CreateView):
 
 class CouponUpdateView(SuperAdminRequiredMixin, UpdateView):
     model = Coupon
-    fields = [
-        "code", "description", "discount_type", "discount_value",
-        "min_order_value", "max_discount_amount", "usage_limit",
-        "user_limit", "valid_from", "valid_until", "is_active",
-    ]
+    form_class = CouponForm
     template_name = "dashboard/coupon_form.html"
     success_url = reverse_lazy("dashboard:coupons")
 
@@ -1012,6 +1200,10 @@ class StoreSettingsView(SuperAdminRequiredMixin, View):
         settings_obj.support_phone = request.POST.get("support_phone", settings_obj.support_phone)
         settings_obj.store_address = request.POST.get("store_address", settings_obj.store_address)
         settings_obj.currency_symbol = request.POST.get("currency_symbol", settings_obj.currency_symbol)
+
+        settings_obj.merchant_upi_id = request.POST.get("merchant_upi_id", settings_obj.merchant_upi_id).strip()
+        settings_obj.merchant_name = request.POST.get("merchant_name", settings_obj.merchant_name).strip()
+        settings_obj.whatsapp_notify_number = request.POST.get("whatsapp_notify_number", settings_obj.whatsapp_notify_number).strip()
 
         try:
             settings_obj.tax_percentage = Decimal(request.POST.get("tax_percentage", "3.00"))

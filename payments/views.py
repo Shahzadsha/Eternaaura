@@ -10,6 +10,7 @@ from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
+from dashboard.models import StoreSettings
 from orders.models import Order
 from .models import Payment
 
@@ -38,8 +39,10 @@ class UPIPreviewQRCodeView(LoginRequiredMixin, View):
     def get(self, request):
         amount_str = request.GET.get("am", "0.00")
         tr = request.GET.get("tr", "")
-        merchant_upi = getattr(settings, "MERCHANT_UPI_ID", "eternaaura@upi")
-        merchant_name = urllib.parse.quote(getattr(settings, "MERCHANT_NAME", "EternaAura"))
+
+        store_settings = StoreSettings.get_solo()
+        merchant_upi = store_settings.merchant_upi_id or ""
+        merchant_name = urllib.parse.quote(store_settings.merchant_name or "Store")
         
         if not tr:
             tr = f"TRX{uuid.uuid4().hex[:12].upper()}"
