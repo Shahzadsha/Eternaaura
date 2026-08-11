@@ -109,7 +109,8 @@ pip-wheel-metadata/
 tempCodeRunnerFile.py
 
 # Python version managers
-.python-version
+!.python-version
+
 
 # Package managers (optional)
 poetry.lock
