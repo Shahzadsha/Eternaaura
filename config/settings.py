@@ -187,7 +187,7 @@ AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default=None) or os.environ.get(
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default=None) or os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default=None) or os.environ.get("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_ENDPOINT_URL = config("AWS_S3_ENDPOINT_URL", default=None) or os.environ.get("AWS_S3_ENDPOINT_URL")
-AWS_S3_CUSTOM_DOMAIN = config("AWS_S3_CUSTOM_DOMAIN", default=None) or os.environ.get("AWS_S3_CUSTOM_DOMAIN")
+AWS_S3_CUSTOM_DOMAIN = config("AWS_S3_CUSTOM_DOMAIN", default=None) or os.environ.get("AWS_S3_CUSTOM_DOMAIN") or os.environ.get("R2_PUBLIC_URL")
 
 if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME and AWS_S3_ENDPOINT_URL:
     AWS_S3_SIGNATURE_VERSION = config("AWS_S3_SIGNATURE_VERSION", default="s3v4")
@@ -204,9 +204,10 @@ if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME and A
         },
     }
     if AWS_S3_CUSTOM_DOMAIN:
-        MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+        clean_domain = AWS_S3_CUSTOM_DOMAIN.replace("https://", "").replace("http://", "").rstrip("/")
+        MEDIA_URL = f"https://{clean_domain}/"
     else:
-        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL.rstrip('/')}/{AWS_STORAGE_BUCKET_NAME}/"
+        MEDIA_URL = "/media/"
 else:
     MEDIA_URL = "/media/"
     STORAGES = {
@@ -219,7 +220,6 @@ else:
     }
 
 MEDIA_ROOT = BASE_DIR / "media"
-
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -260,10 +260,29 @@ STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 # Logging Configuration
 # ---------------------------------------------------------------------------
 LOG_DIR = BASE_DIR / "logs"
-try:
-    LOG_DIR.mkdir(exist_ok=True)
-except Exception:
-    pass
+
+log_handlers = {
+    "console": {
+        "level": "INFO",
+        "class": "logging.StreamHandler",
+        "formatter": "simple",
+    },
+}
+
+active_handlers = ["console"]
+
+if DEBUG:
+    try:
+        LOG_DIR.mkdir(exist_ok=True)
+        log_handlers["file"] = {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": LOG_DIR / "django_errors.log",
+            "formatter": "verbose",
+        }
+        active_handlers.append("file")
+    except Exception:
+        pass
 
 LOGGING = {
     "version": 1,
@@ -278,27 +297,15 @@ LOGGING = {
             "style": "{",
         },
     },
-    "handlers": {
-        "file": {
-            "level": "ERROR",
-            "class": "logging.FileHandler",
-            "filename": LOG_DIR / "django_errors.log",
-            "formatter": "verbose",
-        },
-        "console": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
-            "formatter": "simple",
-        },
-    },
+    "handlers": log_handlers,
     "loggers": {
         "django": {
-            "handlers": ["file", "console"],
+            "handlers": active_handlers,
             "level": "INFO",
             "propagate": True,
         },
         "orders": {
-            "handlers": ["file", "console"],
+            "handlers": active_handlers,
             "level": "ERROR",
             "propagate": False,
         },
