@@ -73,6 +73,8 @@ INSTALLED_APPS = [
     "django.contrib.sites",
 
     # Third-party (installed via requirements.txt)
+    "cloudinary_storage",
+    "cloudinary",
     "django_filters",
     "widget_tweaks",
 
@@ -182,34 +184,21 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Cloudflare R2 / S3 Storage (Production) vs Local FileSystem Storage (Development)
-AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default=None) or os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default=None) or os.environ.get("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default=None) or os.environ.get("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_ENDPOINT_URL = config("AWS_S3_ENDPOINT_URL", default=None) or os.environ.get("AWS_S3_ENDPOINT_URL")
-AWS_S3_CUSTOM_DOMAIN = config("AWS_S3_CUSTOM_DOMAIN", default=None) or os.environ.get("AWS_S3_CUSTOM_DOMAIN") or os.environ.get("R2_PUBLIC_URL")
+# Cloudinary Storage (Production) vs Local FileSystem Storage (Development)
+CLOUDINARY_URL = config("CLOUDINARY_URL", default=None) or os.environ.get("CLOUDINARY_URL")
 
-if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME and AWS_S3_ENDPOINT_URL:
-    AWS_S3_SIGNATURE_VERSION = config("AWS_S3_SIGNATURE_VERSION", default="s3v4")
-    AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="auto")
-    AWS_S3_FILE_OVERWRITE = False
-    AWS_DEFAULT_ACL = None
-    AWS_QUERYSTRING_AUTH = False
-
-
+if CLOUDINARY_URL:
+    CLOUDINARY_STORAGE = {
+        "CLOUDINARY_URL": CLOUDINARY_URL,
+    }
     STORAGES = {
         "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
         },
         "staticfiles": {
             "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
-    if AWS_S3_CUSTOM_DOMAIN:
-        clean_domain = AWS_S3_CUSTOM_DOMAIN.replace("https://", "").replace("http://", "").rstrip("/")
-        MEDIA_URL = f"https://{clean_domain}/"
-    else:
-        MEDIA_URL = "/media/"
 else:
     MEDIA_URL = "/media/"
     STORAGES = {
