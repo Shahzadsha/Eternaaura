@@ -194,6 +194,8 @@ if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME and A
     AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="auto")
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+
 
     STORAGES = {
         "default": {
@@ -277,7 +279,7 @@ if DEBUG:
         log_handlers["file"] = {
             "level": "ERROR",
             "class": "logging.FileHandler",
-            "filename": LOG_DIR / "django_errors.log",
+            "filename": str(LOG_DIR / "django_errors.log"),
             "formatter": "verbose",
         }
         active_handlers.append("file")

@@ -27,14 +27,6 @@
       <p class="text-sm text-ink font-medium">Cash on Delivery (COD)</p>
       <p class="text-xs text-ink/60 mt-1">Status: <span class="text-gold-dark font-medium uppercase">{{ order.get_status_display }}</span></p>
     </div>
-
-    <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
-      <h3 class="font-serif text-base font-semibold mb-2">Need Assistance?</h3>
-      <p class="text-xs text-ink/60 mb-3">Questions regarding shipment or returns for this order?</p>
-      <a href="{% url 'orders:track' order.id %}" class="inline-block text-xs font-medium text-gold-dark hover:underline">
-        Track Package & Timeline →
-      </a>
-    </div>
   </div>
 
   <!-- Order Items Table -->

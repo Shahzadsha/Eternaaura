@@ -2,7 +2,7 @@
 {% block page_title %}Order #{{ order.order_number }}{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+<div class="hidden sm:flex mb-6 flex-wrap items-center justify-between gap-4">
   <div class="flex items-center gap-3">
     <a href="{% url 'dashboard:orders' %}" class="text-xs text-gold hover:text-gold-light">← Back to Orders</a>
     <h2 class="font-serif text-xl text-white font-bold">Order #{{ order.order_number }}</h2>

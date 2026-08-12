@@ -4,59 +4,76 @@
 {% block content %}
 <div class="space-y-6">
 
-  <!-- Header -->
-  <div class="border-b border-white/10 pb-5">
+  <!-- Desktop Header (>= 640px) -->
+  <div class="hidden sm:block border-b border-white/10 pb-5">
     <h1 class="font-serif text-2xl sm:text-3xl text-white font-bold tracking-tight">Customer Reviews Moderation</h1>
     <p class="text-xs text-gray-400 mt-1">Review, approve, or reject customer feedback and product star ratings</p>
   </div>
 
+  <!-- Mobile Header Bar (< 640px) -->
+  <div class="flex sm:hidden items-center justify-between gap-3 mb-2">
+    <div>
+      <h1 class="font-serif text-xl text-white font-bold tracking-tight">Reviews Moderation</h1>
+      <p class="text-[11px] text-gray-400">Feedback &amp; star ratings</p>
+    </div>
+    {% if pending_count > 0 %}
+      <span class="px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono font-bold text-xs">
+        ⏳ {{ pending_count }} Pending
+      </span>
+    {% else %}
+      <span class="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono font-bold text-xs">
+        ✅ {{ total_reviews }} Total
+      </span>
+    {% endif %}
+  </div>
+
   <!-- KPI Summary Cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-      <div class="w-12 h-12 rounded-xl bg-gold/15 text-gold flex items-center justify-center text-xl shrink-0 font-serif font-bold">⭐</div>
+  <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+    <div class="bg-panel border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl flex items-center gap-3 sm:gap-4">
+      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gold/15 text-gold flex items-center justify-center text-lg sm:text-xl shrink-0 font-serif font-bold">⭐</div>
       <div>
-        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Total Reviews</p>
-        <p class="text-2xl font-bold font-mono text-white mt-0.5">{{ total_reviews }}</p>
+        <p class="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-gray-400">Total</p>
+        <p class="text-xl sm:text-2xl font-bold font-mono text-white mt-0.5">{{ total_reviews }}</p>
       </div>
     </div>
 
-    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-      <div class="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-xl shrink-0 font-serif font-bold">⏳</div>
+    <div class="bg-panel border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl flex items-center gap-3 sm:gap-4">
+      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-lg sm:text-xl shrink-0 font-serif font-bold">⏳</div>
       <div>
-        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Pending Moderation</p>
-        <p class="text-2xl font-bold font-mono text-amber-300 mt-0.5">{{ pending_count }}</p>
+        <p class="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-gray-400">Pending</p>
+        <p class="text-xl sm:text-2xl font-bold font-mono text-amber-300 mt-0.5">{{ pending_count }}</p>
       </div>
     </div>
 
-    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-      <div class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-xl shrink-0 font-serif font-bold">✅</div>
+    <div class="bg-panel border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl flex items-center gap-3 sm:gap-4">
+      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg sm:text-xl shrink-0 font-serif font-bold">✅</div>
       <div>
-        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Approved Reviews</p>
-        <p class="text-2xl font-bold font-mono text-emerald-400 mt-0.5">{{ approved_count }}</p>
+        <p class="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-gray-400">Approved</p>
+        <p class="text-xl sm:text-2xl font-bold font-mono text-emerald-400 mt-0.5">{{ approved_count }}</p>
       </div>
     </div>
 
-    <div class="bg-panel border border-white/10 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-      <div class="w-12 h-12 rounded-xl bg-purple-500/15 text-purple-300 flex items-center justify-center text-xl shrink-0 font-serif font-bold">📊</div>
+    <div class="bg-panel border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl flex items-center gap-3 sm:gap-4">
+      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/15 text-purple-300 flex items-center justify-center text-lg sm:text-xl shrink-0 font-serif font-bold">📊</div>
       <div>
-        <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Average Rating</p>
-        <p class="text-2xl font-bold font-mono text-purple-300 mt-0.5">{{ avg_rating|floatformat:1 }} ★</p>
+        <p class="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-gray-400">Avg Rating</p>
+        <p class="text-xl sm:text-2xl font-bold font-mono text-purple-300 mt-0.5">{{ avg_rating|floatformat:1 }} ★</p>
       </div>
     </div>
   </div>
 
   <!-- Filter Toolbar -->
   <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-    <form method="get" class="flex flex-wrap items-center gap-3 w-full sm:w-auto text-xs">
+    <form method="get" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto text-xs">
       <select name="status" onchange="this.form.submit()"
-              class="bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
+              class="w-full sm:w-auto bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
         <option value="">All Statuses</option>
         <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Pending Approval Only ({{ pending_count }})</option>
         <option value="approved" {% if selected_status == "approved" %}selected{% endif %}>Approved Only ({{ approved_count }})</option>
       </select>
 
       <select name="rating" onchange="this.form.submit()"
-              class="bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
+              class="w-full sm:w-auto bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
         <option value="">All Star Ratings</option>
         <option value="5" {% if selected_rating == "5" %}selected{% endif %}>5 Stars (★★★★★)</option>
         <option value="4" {% if selected_rating == "4" %}selected{% endif %}>4 Stars (★★★★☆)</option>
@@ -66,13 +83,113 @@
       </select>
 
       {% if selected_status or selected_rating %}
-        <a href="{% url 'dashboard:reviews' %}" class="text-xs text-gray-400 hover:text-white px-2 py-1.5 bg-white/5 rounded-lg border border-white/10">Clear Filters</a>
+        <a href="{% url 'dashboard:reviews' %}" class="text-center text-xs text-gray-400 hover:text-white px-3 py-2 bg-white/5 rounded-xl border border-white/10">Clear Filters</a>
       {% endif %}
     </form>
   </div>
 
-  <!-- Reviews List / Table Card -->
-  <div class="bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+  <!-- Mobile Reviews Cards List (< 640px) -->
+  <div class="block sm:hidden space-y-4">
+    {% for r in reviews %}
+      <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl space-y-3">
+        <!-- Card Header: Product Image + Product Name + Rating -->
+        <div class="flex items-start gap-3">
+          <div class="w-12 h-12 rounded-xl bg-black/40 border border-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+            {% with img=r.product.images.first %}
+              {% if img %}
+                <img src="{{ img.image.url }}" alt="{{ r.product.name }}" class="w-full h-full object-cover">
+              {% else %}
+                <span class="text-[10px] text-gray-500 font-mono">No Img</span>
+              {% endif %}
+            {% endwith %}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-white font-semibold text-xs truncate">{{ r.product.name }}</h3>
+              <div class="flex items-center gap-1 text-amber-400 font-bold text-xs shrink-0">
+                <span>{{ r.rating }}</span>
+                <span>★</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-gray-300 font-medium mt-0.5">{{ r.user.get_full_name|default:r.user.username }}</p>
+            <p class="text-[10px] text-gray-400 font-mono truncate">{{ r.user.email }}</p>
+          </div>
+        </div>
+
+        <!-- Review Title & Body -->
+        <div class="bg-panel2/60 p-3 rounded-xl border border-white/5 space-y-1">
+          {% if r.title %}
+            <p class="font-semibold text-white text-xs">{{ r.title }}</p>
+          {% endif %}
+          <p class="text-gray-300 text-xs leading-relaxed">{{ r.body }}</p>
+        </div>
+
+        <!-- Badges Row: Status + Verified Buyer + Date -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px]">
+          <div>
+            {% if r.is_approved %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Approved
+              </span>
+            {% else %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-semibold text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Pending Approval
+              </span>
+            {% endif %}
+            {% if r.is_verified_buyer %}
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold ml-1">Verified Buyer</span>
+            {% endif %}
+          </div>
+          <span class="text-gray-400 text-[10px]">{{ r.created_at|date:"M d, Y" }}</span>
+        </div>
+
+        <!-- Mobile Touch Action Buttons -->
+        <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+          <form action="{% url 'dashboard:review_toggle_approve' r.id %}" method="post" class="flex-1">
+            {% csrf_token %}
+            {% if r.is_approved %}
+              <button type="submit" 
+                      class="w-full py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500 hover:text-black border border-amber-500/20 text-amber-300 font-semibold text-xs transition text-center">
+                Unapprove
+              </button>
+            {% else %}
+              <button type="submit" 
+                      class="w-full py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 hover:text-black border border-emerald-500/20 text-emerald-400 font-semibold text-xs transition text-center">
+                Approve Review
+              </button>
+            {% endif %}
+          </form>
+          <a href="{% url 'dashboard:review_delete' r.id %}" 
+             class="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-semibold text-xs transition shrink-0">
+            Delete
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="bg-panel border border-white/10 rounded-2xl p-8 text-center text-gray-400">
+        <p class="text-2xl mb-2">⭐</p>
+        <p class="font-medium text-white text-sm">No reviews found</p>
+        <p class="text-xs text-gray-500 mt-1">Try adjusting your moderation status or star rating filter.</p>
+      </div>
+    {% endfor %}
+
+    {% if is_paginated %}
+      <div class="flex items-center justify-between px-4 py-3 bg-panel border border-white/10 rounded-2xl text-xs text-gray-400">
+        <div>Page {{ page_obj.number }} of {{ paginator.num_pages }}</div>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&status={{ selected_status }}&rating={{ selected_rating }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&status={{ selected_status }}&rating={{ selected_rating }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Desktop Reviews Table Card (>= 640px) -->
+  <div class="hidden sm:block bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left text-xs">
         <thead class="bg-panel2/60 text-gray-400 uppercase text-[10px] tracking-wider border-b border-white/10">

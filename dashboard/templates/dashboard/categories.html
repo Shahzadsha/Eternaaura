@@ -4,8 +4,8 @@
 {% block content %}
 <div class="space-y-6">
 
-  <!-- Header & Primary Action -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+  <!-- Desktop Header & Primary Action (>= 640px) -->
+  <div class="hidden sm:flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
     <div>
       <h1 class="font-serif text-2xl sm:text-3xl text-white font-bold tracking-tight">Product Categories</h1>
       <p class="text-xs text-gray-400 mt-1">Organize jewellery catalogue hierarchy, display orders, and active statuses</p>
@@ -16,6 +16,18 @@
         <span class="text-base font-bold">+</span> Create Category
       </a>
     </div>
+  </div>
+
+  <!-- Mobile Header Bar (< 640px) -->
+  <div class="flex sm:hidden items-center justify-between gap-3 mb-2">
+    <div>
+      <h1 class="font-serif text-xl text-white font-bold tracking-tight">Categories</h1>
+      <p class="text-[11px] text-gray-400">Organize catalogue hierarchy</p>
+    </div>
+    <a href="{% url 'dashboard:category_create' %}" 
+       class="px-3.5 py-2 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition shadow-md flex items-center gap-1.5 shrink-0">
+      <span class="text-sm font-bold">+</span> Create
+    </a>
   </div>
 
   <!-- Search & Stats Bar -->
@@ -35,8 +47,98 @@
     </div>
   </div>
 
-  <!-- Categories Table Card -->
-  <div class="bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+  <!-- Mobile Categories Cards List (< 640px) -->
+  <div class="block sm:hidden space-y-4">
+    {% for c in categories %}
+      <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl space-y-3">
+        <!-- Card Header: Image + Name + Status -->
+        <div class="flex items-start gap-3">
+          <div class="w-12 h-12 rounded-xl bg-black/40 border border-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+            {% if c.image %}
+              <img src="{{ c.image.url }}" alt="{{ c.name }}" class="w-full h-full object-cover">
+            {% else %}
+              <span class="text-[10px] text-gray-500 font-mono">No Img</span>
+            {% endif %}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-white font-semibold text-sm truncate">{{ c.name }}</h3>
+              {% if c.is_active %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold text-[10px] shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/30 text-gray-400 font-semibold text-[10px] shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span> Disabled
+                </span>
+              {% endif %}
+            </div>
+            <p class="text-[11px] font-mono text-gray-400 mt-0.5 truncate">{{ c.slug }}</p>
+            {% if c.description %}
+              <p class="text-[11px] text-gray-400 line-clamp-2 mt-1">{{ c.description }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Badges Row: Parent, Products, Display Order -->
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5 text-[11px]">
+          {% if c.parent %}
+            <span class="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-300 font-medium">
+              Parent: {{ c.parent.name }}
+            </span>
+          {% else %}
+            <span class="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5 text-gray-500">
+              Main Category
+            </span>
+          {% endif %}
+
+          <span class="px-2.5 py-0.5 rounded-full bg-gold/10 border border-gold/20 text-gold font-mono font-bold">
+            💎 {{ c.product_count }} items
+          </span>
+
+          <span class="px-2 py-0.5 rounded bg-panel2 border border-white/10 font-mono text-gray-400">
+            Order #{{ c.display_order }}
+          </span>
+        </div>
+
+        <!-- Mobile Touch Action Buttons -->
+        <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+          <a href="{% url 'dashboard:category_edit' c.id %}" 
+             class="flex-1 py-2 text-center rounded-xl bg-white/5 hover:bg-gold hover:text-black border border-white/10 text-gray-300 font-semibold text-xs transition">
+            Edit Category
+          </a>
+          <a href="{% url 'dashboard:category_delete' c.id %}" 
+             class="flex-1 py-2 text-center rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-semibold text-xs transition">
+            Delete
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="bg-panel border border-white/10 rounded-2xl p-8 text-center text-gray-400">
+        <p class="text-2xl mb-2">✨</p>
+        <p class="font-medium text-white text-sm">No categories found</p>
+        <p class="text-xs text-gray-500 mt-1 mb-4">Create your first category to start organizing products.</p>
+        <a href="{% url 'dashboard:category_create' %}" class="inline-block px-4 py-2 rounded-xl bg-gold text-black font-semibold text-xs">+ Create Category</a>
+      </div>
+    {% endfor %}
+
+    {% if is_paginated %}
+      <div class="flex items-center justify-between px-4 py-3 bg-panel border border-white/10 rounded-2xl text-xs text-gray-400">
+        <div>Page {{ page_obj.number }} of {{ paginator.num_pages }}</div>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Desktop Categories Table Card (>= 640px) -->
+  <div class="hidden sm:block bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left text-xs">
         <thead class="bg-panel2/60 text-gray-400 uppercase text-[10px] tracking-wider border-b border-white/10">

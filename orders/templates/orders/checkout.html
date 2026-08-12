@@ -4,212 +4,245 @@
 <div class="max-w-6xl mx-auto px-4 md:px-8 py-8 sm:py-12">
   <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl mb-6 sm:mb-8">Checkout</h1>
 
-  <form method="post" action="{% url 'orders:checkout' %}">
+  <!-- Standard HTML5 Checkout Form -->
+  <form id="checkout_form" method="post" action="{% url 'orders:checkout' %}">
     {% csrf_token %}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-      
-      <!-- Delivery Address Selection -->
-      <div class="md:col-span-2 space-y-6">
+  </form>
 
-        {% if addresses %}
-        <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 border border-black/5">
-          <h2 class="font-serif text-lg sm:text-xl mb-4">Select Shipping Address</h2>
-          <div class="space-y-3">
-            {% for addr in addresses %}
-            <label class="flex items-start gap-3 p-3.5 sm:p-4 border border-ink/10 rounded-xl cursor-pointer hover:border-gold transition-colors">
-              <input type="radio" name="address_id" value="{{ addr.id }}" {% if addr.is_default or forloop.first %}checked{% endif %} class="mt-1 accent-gold shrink-0">
-              <div class="min-w-0">
-                <p class="font-medium text-ink text-sm sm:text-base">{{ addr.full_name }} <span class="text-xs text-ink/40 uppercase">({{ addr.address_type }})</span></p>
-                <p class="text-xs sm:text-sm text-ink/70 mt-0.5">{{ addr.line1 }}{% if addr.line2 %}, {{ addr.line2 }}{% endif %}</p>
-                <p class="text-xs sm:text-sm text-ink/70">{{ addr.city }}, {{ addr.state }} - {{ addr.postal_code }}</p>
-                <p class="text-xs text-ink/50 mt-1">Phone: {{ addr.phone_number }}</p>
-              </div>
-            </label>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 md:items-start">
+    
+    <!-- 1. Shipping Address Section (Order 1 on Mobile, Row 1 Cols 1-2 on Desktop) -->
+    <div class="order-1 md:order-1 md:col-start-1 md:col-end-3 md:row-start-1 space-y-6">
 
-        <!-- New Address Form (used if no address selected) -->
-        <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 border border-black/5">
-          <h2 class="font-serif text-lg sm:text-xl mb-4">{% if addresses %}Or Add a New Address{% else %}Shipping Address{% endif %}</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Full Name</label>
-              <input type="text" name="full_name" placeholder="John Doe" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+      {% if addresses %}
+      <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 border border-black/5">
+        <h2 class="font-serif text-lg sm:text-xl mb-4">Select Shipping Address</h2>
+        <div class="space-y-3">
+          {% for addr in addresses %}
+          <label class="flex items-start gap-3 p-3.5 sm:p-4 border border-ink/10 rounded-xl cursor-pointer hover:border-gold transition-colors">
+            <input type="radio" name="address_id" value="{{ addr.id }}" form="checkout_form" {% if addr.is_default or forloop.first %}checked{% endif %} class="mt-1 accent-gold shrink-0">
+            <div class="min-w-0">
+              <p class="font-medium text-ink text-sm sm:text-base">{{ addr.full_name }} <span class="text-xs text-ink/40 uppercase">({{ addr.address_type }})</span></p>
+              <p class="text-xs sm:text-sm text-ink/70 mt-0.5">{{ addr.line1 }}{% if addr.line2 %}, {{ addr.line2 }}{% endif %}</p>
+              <p class="text-xs sm:text-sm text-ink/70">{{ addr.city }}, {{ addr.state }} - {{ addr.postal_code }}</p>
+              <p class="text-xs text-ink/50 mt-1">Phone: {{ addr.phone_number }}</p>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Phone Number</label>
-              <input type="text" name="phone_number" placeholder="+91 9876543210" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
-            </div>
-            <div class="sm:col-span-2">
-              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Line 1</label>
-              <input type="text" name="line1" placeholder="Street Address, House/Flat No." class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
-            </div>
-            <div class="sm:col-span-2">
-              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Line 2 (Optional)</label>
-              <input type="text" name="line2" placeholder="Apartment, suite, landmark" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">City</label>
-              <input type="text" name="city" placeholder="Mumbai" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">State</label>
-              <input type="text" name="state" placeholder="Maharashtra" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
-            </div>
-            <div class="sm:col-span-2 sm:w-1/2">
-              <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Pincode / Postal Code</label>
-              <input type="text" name="postal_code" placeholder="400001" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
-            </div>
-          </div>
-        </div>
-
-        <!-- QR Code Payment Section -->
-        <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-8 border border-black/5">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-8 h-8 rounded-full bg-gold/15 text-gold-dark flex items-center justify-center font-serif text-lg font-bold shrink-0">📲</div>
-            <div>
-              <h2 class="font-serif text-lg sm:text-xl text-ink">Scan &amp; Pay</h2>
-              <p class="text-xs text-ink/60">Dynamic UPI Instant Payment</p>
-            </div>
-          </div>
-
-          <p class="text-xs sm:text-sm text-ink/70 mb-4 leading-relaxed">
-            Scan this unique QR code using any UPI app (Google Pay, PhonePe, Paytm, BHIM, etc.) or tap the button below to pay directly on mobile.
-          </p>
-
-          <!-- Dynamic QR Code Image Container -->
-          <div class="flex flex-col items-center justify-center p-4 sm:p-6 bg-cream/40 rounded-2xl border border-gold/30 mb-6 shadow-inner text-center">
-            <div class="p-3 bg-white rounded-xl shadow-md border border-gold/20 mb-3 max-w-[200px] sm:max-w-[240px] aspect-square w-full">
-              <img src="{{ qr_preview_url }}" alt="Scan & Pay UPI QR Code" class="w-full h-full object-contain rounded-lg">
-            </div>
-
-            <!-- Transaction Details & Mobile Deep Link -->
-            <div class="space-y-1.5 mb-3">
-              <p class="text-sm font-semibold text-ink">Payable Amount: <span class="text-gold-dark">₹{{ grand_total|floatformat:2 }}</span></p>
-              <p class="text-xs text-ink/70">UPI ID: <code class="bg-white px-2 py-0.5 rounded border border-ink/10 font-mono text-[11px] select-all">{{ merchant_upi_id }}</code></p>
-              <p class="text-[11px] text-ink/50">Transaction Ref: <span class="font-mono">{{ transaction_ref }}</span></p>
-            </div>
-
-            <a href="{{ upi_link }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gold/20 text-gold-dark rounded-xl text-xs font-semibold hover:bg-gold hover:text-ink transition-colors mb-3">
-              📲 Open &amp; Pay via UPI App
-            </a>
-
-            <div class="flex flex-wrap justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-gold-dark font-medium uppercase tracking-wider text-center">
-              <span>✦ Google Pay</span> • <span>PhonePe</span> • <span>Paytm</span> • <span>BHIM ✦</span>
-            </div>
-          </div>
-
-          <!-- Confirmation Checkbox -->
-          <div class="p-3.5 sm:p-4 bg-gold/5 rounded-xl border border-gold/30">
-            <label class="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" id="payment_completed" name="payment_completed" value="yes" required
-                     onchange="document.getElementById('place_order_btn').disabled = !this.checked;"
-                     class="mt-1 w-4 h-4 rounded border-gold text-gold focus:ring-gold accent-gold shrink-0">
-              <span class="text-xs sm:text-sm font-medium text-ink leading-snug">
-                I have completed the payment via UPI. (Order status will be set to Pending Staff Verification)
-              </span>
-            </label>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Order Summary (Flipkart Price Details Model) -->
-      <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 h-fit space-y-5 border border-black/5">
-        <h2 class="font-accent text-xs uppercase tracking-widest text-ink/50 font-bold border-b border-ink/10 pb-3">Price Details</h2>
-
-        <!-- Items List -->
-        <div class="space-y-3.5 max-h-72 overflow-y-auto pr-1 scrollbar-none">
-          {% for item in cart.items.all %}
-          <div class="flex items-start gap-3 text-sm pb-3 border-b border-ink/5 last:border-0 last:pb-0">
-            <div class="w-14 h-14 rounded-xl bg-champagne overflow-hidden shrink-0 border border-black/5">
-              {% with img=item.product.images.first %}
-              {% if img %}
-                <img src="{{ img.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
-              {% else %}
-                <div class="w-full h-full flex items-center justify-center text-gold-dark/40 text-xs">✦</div>
-              {% endif %}
-              {% endwith %}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-serif text-xs sm:text-sm font-medium text-ink truncate">{{ item.product.name }}</p>
-              {% if item.variant %}
-                <p class="text-[11px] text-gold-dark font-medium mt-0.5">
-                  Variant: {% for v in item.variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}
-                </p>
-              {% endif %}
-              <div class="flex items-center gap-2 mt-1 text-xs text-ink/60">
-                <span>Qty: {{ item.quantity }}</span>
-                {% if item.product.compare_at_price %}
-                  <span class="text-[10px] text-ink/40 line-through">₹{{ item.product.compare_at_price }}</span>
-                {% endif %}
-              </div>
-            </div>
-            <div class="text-right shrink-0">
-              <p class="font-semibold text-xs sm:text-sm text-ink">₹{{ item.line_total }}</p>
-            </div>
-          </div>
+          </label>
           {% endfor %}
         </div>
+      </div>
+      {% endif %}
 
-        <!-- Price Breakdown (Flipkart Style) -->
-        <div class="border-t border-ink/10 pt-4 space-y-2.5 text-xs sm:text-sm">
-          <div class="flex justify-between text-ink/70">
-            <span>Price ({{ cart.items.count }} item{% if cart.items.count > 1 %}s{% endif %})</span>
-            <span class="font-medium text-ink">₹{{ subtotal|floatformat:2 }}</span>
+      <!-- New Address Form (used if no saved address is selected) -->
+      <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 border border-black/5">
+        <h2 class="font-serif text-lg sm:text-xl mb-4">{% if addresses %}Or Add a New Address{% else %}Shipping Address{% endif %}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div>
+            <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Full Name</label>
+            <input type="text" name="full_name" form="checkout_form" placeholder="John Doe" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
           </div>
-
-          {% if discount_total > 0 %}
-          <div class="flex justify-between text-green-700 font-medium">
-            <span>Coupon Discount</span>
-            <span>− ₹{{ discount_total|floatformat:2 }}</span>
+          <div>
+            <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Phone Number</label>
+            <input type="text" name="phone_number" form="checkout_form" placeholder="+91 9876543210" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
           </div>
-          {% endif %}
-
-          <div class="flex justify-between text-ink/70">
-            <span>Delivery Charges</span>
-            {% if shipping_fee == 0 %}
-              <span class="text-green-700 font-semibold uppercase tracking-wider text-xs">FREE</span>
-            {% else %}
-              <span class="font-medium text-ink">₹{{ shipping_fee|floatformat:2 }}</span>
-            {% endif %}
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Line 1</label>
+            <input type="text" name="line1" form="checkout_form" placeholder="Street Address, House/Flat No." class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
           </div>
-
-          <div class="flex justify-between font-serif text-base sm:text-lg text-ink font-bold pt-3 border-t border-dashed border-ink/15">
-            <span>Total Amount</span>
-            <span class="text-gold-dark">₹{{ grand_total|floatformat:2 }}</span>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Address Line 2 (Optional)</label>
+            <input type="text" name="line2" form="checkout_form" placeholder="Apartment, suite, landmark" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-ink/60 uppercase mb-1">City</label>
+            <input type="text" name="city" form="checkout_form" placeholder="Mumbai" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-ink/60 uppercase mb-1">State</label>
+            <input type="text" name="state" form="checkout_form" placeholder="Maharashtra" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
+          </div>
+          <div class="sm:col-span-2 sm:w-1/2">
+            <label class="block text-xs font-medium text-ink/60 uppercase mb-1">Pincode / Postal Code</label>
+            <input type="text" name="postal_code" form="checkout_form" placeholder="400001" class="w-full rounded-xl border border-ink/15 px-3.5 py-2.5 text-sm focus:outline-none focus:border-gold">
           </div>
         </div>
-
-        <!-- Savings Banner (Flipkart Style) -->
-        {% if discount_total > 0 or shipping_fee == 0 %}
-        <div class="p-3 bg-green-50 rounded-xl border border-green-200/60 text-center">
-          <p class="text-xs font-semibold text-green-800 flex items-center justify-center gap-1">
-            <span>🎉 You will save</span>
-            <span class="font-bold">
-              {% if discount_total > 0 and shipping_fee == 0 %}
-                ₹{{ discount_total|add:150|floatformat:2 }}
-              {% elif discount_total > 0 %}
-                ₹{{ discount_total|floatformat:2 }}
-              {% else %}
-                ₹150 (Free Delivery)
-              {% endif %}
-            </span>
-            <span>on this order!</span>
-          </p>
-        </div>
-        {% endif %}
-
-        <button type="submit" id="place_order_btn" disabled
-                class="w-full py-3.5 bg-ink text-cream rounded-full font-medium text-xs sm:text-sm tracking-wide hover:bg-gold hover:text-ink transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-          Place Order &amp; Open WhatsApp →
-        </button>
       </div>
 
     </div>
-  </form>
-</div>
 
+    <!-- 2. Price Details Section (Order 2 on Mobile, Row 1 Col 3 Sidebar on Desktop) -->
+    <div class="order-2 md:order-2 md:col-start-3 md:row-start-1 bg-white rounded-2xl shadow-sm p-5 sm:p-6 space-y-5 border border-black/5">
+      <h2 class="font-accent text-xs uppercase tracking-widest text-ink/50 font-bold border-b border-ink/10 pb-3">Price Details</h2>
+
+      <!-- Items List -->
+      <div class="space-y-3.5 max-h-72 overflow-y-auto pr-1 scrollbar-none">
+        {% for item in cart.items.all %}
+        <div class="flex items-start gap-3 text-sm pb-3 border-b border-ink/5 last:border-0 last:pb-0">
+          <div class="w-14 h-14 rounded-xl bg-champagne overflow-hidden shrink-0 border border-black/5">
+            {% with img=item.product.images.first %}
+            {% if img %}
+              <img src="{{ img.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+            {% else %}
+              <div class="w-full h-full flex items-center justify-center text-gold-dark/40 text-xs">✦</div>
+            {% endif %}
+            {% endwith %}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-serif text-xs sm:text-sm font-medium text-ink truncate">{{ item.product.name }}</p>
+            {% if item.variant %}
+              <p class="text-[11px] text-gold-dark font-medium mt-0.5">
+                Variant: {% for v in item.variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}
+              </p>
+            {% endif %}
+            <div class="flex items-center gap-2 mt-1 text-xs text-ink/60">
+              <span>Qty: {{ item.quantity }}</span>
+              {% if item.product.compare_at_price %}
+                <span class="text-[10px] text-ink/40 line-through">₹{{ item.product.compare_at_price }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-semibold text-xs sm:text-sm text-ink">₹{{ item.line_total }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Price Breakdown (With Discount on MRP) -->
+      <div class="border-t border-ink/10 pt-4 space-y-2.5 text-xs sm:text-sm">
+        <div class="flex justify-between text-ink/70">
+          <span>Price ({{ cart.items.count }} item{% if cart.items.count > 1 %}s{% endif %})</span>
+          <span class="font-medium text-ink">₹{{ total_mrp|default:subtotal|floatformat:2 }}</span>
+        </div>
+
+        <div class="flex justify-between text-ink/70">
+          <span>Delivery Charges</span>
+          {% if shipping_fee == 0 %}
+            <span class="text-green-700 font-semibold uppercase tracking-wider text-xs">FREE</span>
+          {% else %}
+            <span class="font-medium text-ink">₹{{ shipping_fee|floatformat:2 }}</span>
+          {% endif %}
+        </div>
+
+        {% if mrp_discount > 0 %}
+        <div class="flex justify-between text-green-700 font-medium">
+          <span>Discount on MRP</span>
+          <span>− ₹{{ mrp_discount|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+
+        {% if discount_total > 0 %}
+        <div class="flex justify-between text-green-700 font-medium">
+          <span>Coupon Discount ({{ coupon.code }})</span>
+          <span>− ₹{{ discount_total|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+
+        <div class="flex justify-between font-serif text-base sm:text-lg text-ink font-bold pt-3 border-t border-dashed border-ink/15">
+          <span>Total Amount</span>
+          <span class="text-gold-dark">₹{{ grand_total|floatformat:2 }}</span>
+        </div>
+      </div>
+
+      <!-- Apply Coupon Option (Standalone HTML5 Form) -->
+      <div class="border-t border-ink/10 pt-4">
+        {% if coupon %}
+        <div class="flex items-center justify-between bg-gold/10 p-3 rounded-xl border border-gold/30">
+          <div>
+            <p class="text-xs text-gold-dark font-semibold">Promo Code Applied</p>
+            <p class="text-sm font-bold text-ink">{{ coupon.code }} <span class="text-xs font-semibold text-gold-dark">({{ coupon.formatted_discount_badge }})</span></p>
+          </div>
+          <form action="{% url 'coupons:remove' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="text-xs text-red-600 font-medium hover:underline">Remove</button>
+          </form>
+        </div>
+        {% else %}
+        <form action="{% url 'coupons:apply' %}" method="post" class="flex gap-2">
+          {% csrf_token %}
+          <input type="text" name="code" placeholder="Promo Code" required class="w-full rounded-xl border border-ink/15 px-3 py-2 text-xs uppercase focus:outline-none focus:border-gold">
+          <button type="submit" class="px-4 py-2 bg-ink text-cream rounded-xl text-xs font-medium hover:bg-gold hover:text-ink transition-colors shrink-0">Apply</button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Savings Summary Banner -->
+      {% with total_saved=mrp_discount|add:discount_total %}
+      {% if total_saved > 0 or shipping_fee == 0 %}
+      <div class="p-3 bg-green-50 rounded-xl border border-green-200/60 text-center">
+        <p class="text-xs font-semibold text-green-800 flex items-center justify-center gap-1">
+          <span>🎉 You save</span>
+          <span class="font-bold">
+            {% if total_saved > 0 and shipping_fee == 0 %}
+              ₹{{ total_saved|add:150|floatformat:2 }}
+            {% elif total_saved > 0 %}
+              ₹{{ total_saved|floatformat:2 }}
+            {% else %}
+              ₹150 (Free Shipping)
+            {% endif %}
+          </span>
+          <span>on this order!</span>
+        </p>
+      </div>
+      {% endif %}
+      {% endwith %}
+    </div>
+
+    <!-- 3. Scan & Pay Card Section (Order 3 on Mobile, Row 2 Cols 1-2 on Desktop) -->
+    <div class="order-3 md:order-3 md:col-start-1 md:col-end-3 md:row-start-2 bg-white rounded-2xl shadow-sm p-5 sm:p-8 border border-black/5 space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-gold/15 text-gold-dark flex items-center justify-center font-serif text-lg font-bold shrink-0">📲</div>
+        <div>
+          <h2 class="font-serif text-lg sm:text-xl text-ink">Scan &amp; Pay</h2>
+          <p class="text-xs text-ink/60">Dynamic UPI Instant Payment</p>
+        </div>
+      </div>
+
+      <p class="text-xs sm:text-sm text-ink/70 leading-relaxed">
+        Scan this unique QR code using any UPI app (Google Pay, PhonePe, Paytm, BHIM, etc.) or tap the button below to pay directly on mobile.
+      </p>
+
+      <!-- Dynamic QR Code Container -->
+      <div class="flex flex-col items-center justify-center p-4 sm:p-6 bg-cream/40 rounded-2xl border border-gold/30 shadow-inner text-center">
+        <div class="p-3 bg-white rounded-xl shadow-md border border-gold/20 mb-3 max-w-[200px] sm:max-w-[240px] aspect-square w-full">
+          <img src="{{ qr_preview_url }}" alt="Scan & Pay UPI QR Code" class="w-full h-full object-contain rounded-lg">
+        </div>
+
+        <!-- Transaction Details & Mobile Deep Link -->
+        <div class="space-y-1.5 mb-3">
+          <p class="text-sm font-semibold text-ink">Payable Amount: <span class="text-gold-dark font-bold">₹{{ grand_total|floatformat:2 }}</span></p>
+          <p class="text-xs text-ink/70">UPI ID: <code class="bg-white px-2 py-0.5 rounded border border-ink/10 font-mono text-[11px] select-all">{{ merchant_upi_id }}</code></p>
+          <p class="text-[11px] text-ink/50">Transaction Ref: <span class="font-mono">{{ transaction_ref }}</span></p>
+        </div>
+
+        <a href="{{ upi_link }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gold/20 text-gold-dark rounded-xl text-xs font-semibold hover:bg-gold hover:text-ink transition-colors mb-3">
+          📲 Open &amp; Pay via UPI App
+        </a>
+
+        <div class="flex flex-wrap justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-gold-dark font-medium uppercase tracking-wider text-center">
+          <span>✦ Google Pay</span> • <span>PhonePe</span> • <span>Paytm</span> • <span>BHIM ✦</span>
+        </div>
+      </div>
+
+      <!-- Confirmation Checkbox -->
+      <div class="p-3.5 sm:p-4 bg-gold/5 rounded-xl border border-gold/30">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" id="payment_completed" name="payment_completed" value="yes" form="checkout_form" required
+                 onchange="document.getElementById('place_order_btn').disabled = !this.checked;"
+                 class="mt-1 w-4 h-4 rounded border-gold text-gold focus:ring-gold accent-gold shrink-0">
+          <span class="text-xs sm:text-sm font-medium text-ink leading-snug">
+            I have completed the payment via UPI. (Order status will be set to Pending Staff Verification)
+          </span>
+        </label>
+      </div>
+
+      <!-- Submit Button: Place Order and Open WhatsApp -->
+      <button type="submit" form="checkout_form" id="place_order_btn" disabled
+              class="w-full py-4 bg-ink text-cream rounded-full font-medium text-xs sm:text-sm tracking-wide hover:bg-gold hover:text-ink transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+        Place Order and Open WhatsApp →
+      </button>
+    </div>
+
+  </div>
+</div>
 {% endblock %}

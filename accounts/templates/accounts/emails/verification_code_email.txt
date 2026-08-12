@@ -1,0 +1,23 @@
+ETERNAAURA — LUXURY JEWELLERY
+==================================================
+
+YOUR VERIFICATION CODE
+
+Hello {{ user_display_name|default:"Valued Customer" }},
+
+Thank you for choosing EternaAura. Please use the six-digit verification code below to verify your email address:
+
+VERIFICATION CODE: {{ code }}
+
+⏱ This verification code will expire in 10 minutes.
+
+SECURITY WARNING:
+Never share this verification code with anyone. EternaAura representatives will never ask for your verification code.
+
+Didn't request this code? You can safely ignore this email. Someone may have entered your email address by mistake. Your account remains completely secure.
+
+--------------------------------------------------
+Authentic Jewellery | Trusted Quality | Secure Shopping | Customer Support
+
+Thank you for choosing EternaAura.
+© {% now "Y" %} EternaAura. All rights reserved.

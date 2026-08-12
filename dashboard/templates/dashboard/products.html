@@ -4,8 +4,8 @@
 {% block content %}
 <div class="space-y-6">
 
-  <!-- Page Header & Action -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+  <!-- Desktop Header & Action (>= 640px) -->
+  <div class="hidden sm:flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
     <div>
       <h1 class="font-serif text-2xl sm:text-3xl text-white font-bold tracking-tight">Product Catalogue</h1>
       <p class="text-xs text-gray-400 mt-1">Manage jewellery inventory, pricing, merchandising tags, and publishing status</p>
@@ -18,34 +18,48 @@
     </div>
   </div>
 
+  <!-- Mobile Header Bar (< 640px) -->
+  <div class="flex sm:hidden items-center justify-between gap-3 mb-2">
+    <div>
+      <h1 class="font-serif text-xl text-white font-bold tracking-tight">Products</h1>
+      <p class="text-[11px] text-gray-400">Jewellery catalogue</p>
+    </div>
+    <a href="{% url 'dashboard:product_create' %}" 
+       class="px-3.5 py-2 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition shadow-md flex items-center gap-1.5 shrink-0">
+      <span class="text-sm font-bold">+</span> Add Product
+    </a>
+  </div>
+
   <!-- Search & Filter Controls -->
-  <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
-    <form method="get" class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+  <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
+    <form method="get" class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
       <div class="relative w-full sm:w-64">
         <input type="text" name="q" value="{{ q }}" placeholder="Search name or SKU..."
                class="w-full bg-panel2 border border-white/15 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold">
         <span class="absolute left-3 top-2.5 text-gray-500 text-xs">🔍</span>
       </div>
 
-      <select name="category" onchange="this.form.submit()" 
-              class="bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
-        <option value="">All Categories</option>
-        {% for cat in categories %}
-          <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
-        {% endfor %}
-      </select>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <select name="category" onchange="this.form.submit()" 
+                class="w-1/2 sm:w-auto bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
 
-      <select name="status" onchange="this.form.submit()" 
-              class="bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
-        <option value="">All Statuses</option>
-        <option value="published" {% if selected_status == "published" %}selected{% endif %}>Published Only</option>
-        <option value="draft" {% if selected_status == "draft" %}selected{% endif %}>Drafts Only</option>
-        <option value="low_stock" {% if selected_status == "low_stock" %}selected{% endif %}>Low Stock (≤5)</option>
-        <option value="out_of_stock" {% if selected_status == "out_of_stock" %}selected{% endif %}>Out of Stock (0)</option>
-      </select>
+        <select name="status" onchange="this.form.submit()" 
+                class="w-1/2 sm:w-auto bg-panel2 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold">
+          <option value="">All Statuses</option>
+          <option value="published" {% if selected_status == "published" %}selected{% endif %}>Published Only</option>
+          <option value="draft" {% if selected_status == "draft" %}selected{% endif %}>Drafts Only</option>
+          <option value="low_stock" {% if selected_status == "low_stock" %}selected{% endif %}>Low Stock (≤5)</option>
+          <option value="out_of_stock" {% if selected_status == "out_of_stock" %}selected{% endif %}>Out of Stock (0)</option>
+        </select>
+      </div>
 
       {% if q or selected_category or selected_status %}
-        <a href="{% url 'dashboard:products' %}" class="text-xs text-gray-400 hover:text-white px-2 py-1.5 bg-white/5 rounded-lg border border-white/10">Clear Filters</a>
+        <a href="{% url 'dashboard:products' %}" class="text-center text-xs text-gray-400 hover:text-white px-2 py-2 bg-white/5 rounded-xl border border-white/10">Clear Filters</a>
       {% endif %}
     </form>
 
@@ -54,8 +68,107 @@
     </div>
   </div>
 
-  <!-- Products Table Card -->
-  <div class="bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+  <!-- Mobile Products Cards List (< 640px) -->
+  <div class="block sm:hidden space-y-4">
+    {% for p in products %}
+      <div class="bg-panel border border-white/10 rounded-2xl p-4 shadow-xl space-y-3">
+        <!-- Item Info Header -->
+        <div class="flex items-start gap-3">
+          <div class="w-14 h-14 rounded-xl bg-black/40 border border-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+            {% with img=p.images.first %}
+              {% if img %}
+                <img src="{{ img.image.url }}" alt="{{ p.name }}" class="w-full h-full object-cover">
+              {% else %}
+                <span class="text-[10px] text-gray-500 font-mono">No Img</span>
+              {% endif %}
+            {% endwith %}
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-white font-semibold text-sm truncate">{{ p.name }}</h3>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-[11px] font-mono text-gray-400">SKU: <span class="text-gold-light">{{ p.sku }}</span></span>
+            </div>
+            <div class="flex items-center gap-2 mt-1.5">
+              <span class="font-bold text-gold text-sm font-mono">₹{{ p.price }}</span>
+              {% if p.compare_at_price %}
+                <span class="text-[10px] text-gray-500 line-through font-mono">₹{{ p.compare_at_price }}</span>
+              {% endif %}
+              <span class="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-[10px] truncate">
+                {{ p.category.name|default:"Uncategorized" }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Badges & Status Row -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5 text-[11px]">
+          <div class="flex items-center gap-1.5">
+            {% if p.stock_quantity == 0 %}
+              <span class="px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-[10px]">Out of Stock</span>
+            {% elif p.stock_quantity <= 5 %}
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-[10px]">{{ p.stock_quantity }} Low Stock</span>
+            {% else %}
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-[10px]">{{ p.stock_quantity }} units</span>
+            {% endif %}
+
+            {% if p.is_featured %}<span class="px-1.5 py-0.5 rounded bg-gold/15 text-gold text-[10px] font-semibold">Featured</span>{% endif %}
+            {% if p.is_best_seller %}<span class="px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 text-[10px] font-semibold">Best Seller</span>{% endif %}
+            {% if p.is_new_arrival %}<span class="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 text-[10px] font-semibold">New</span>{% endif %}
+          </div>
+
+          <!-- Publish Toggle -->
+          <form method="post" action="{% url 'dashboard:product_toggle_publish' p.pk %}" class="inline">
+            {% csrf_token %}
+            {% if p.is_published %}
+              <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Published
+              </button>
+            {% else %}
+              <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/30 text-gray-400 font-semibold text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span> Draft
+              </button>
+            {% endif %}
+          </form>
+        </div>
+
+        <!-- Mobile Touch Action Buttons -->
+        <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+          <a href="{% url 'dashboard:product_edit' p.pk %}" 
+             class="flex-1 py-2 text-center rounded-xl bg-white/5 hover:bg-gold hover:text-black border border-white/10 text-gray-300 font-semibold text-xs transition">
+            Edit Product
+          </a>
+          <a href="{% url 'dashboard:product_delete' p.pk %}" 
+             class="flex-1 py-2 text-center rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-semibold text-xs transition">
+            Delete
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="bg-panel border border-white/10 rounded-2xl p-8 text-center text-gray-400">
+        <p class="text-2xl mb-2">💍</p>
+        <p class="font-medium text-white text-sm">No products found</p>
+        <p class="text-xs text-gray-500 mt-1 mb-4">Try adjusting your search query or status filter.</p>
+        <a href="{% url 'dashboard:product_create' %}" class="inline-block px-4 py-2 rounded-xl bg-gold text-black font-semibold text-xs">+ Add Product</a>
+      </div>
+    {% endfor %}
+
+    {% if is_paginated %}
+      <div class="flex items-center justify-between px-4 py-3 bg-panel border border-white/10 rounded-2xl text-xs text-gray-400">
+        <div>Page {{ page_obj.number }} of {{ paginator.num_pages }}</div>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&category={{ selected_category }}&status={{ selected_status }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&category={{ selected_category }}&status={{ selected_status }}" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Desktop Products Table Card (>= 640px) -->
+  <div class="hidden sm:block bg-panel border border-white/10 rounded-2xl shadow-xl overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left text-xs">
         <thead class="bg-panel2/60 text-gray-400 uppercase text-[10px] tracking-wider border-b border-white/10">
@@ -139,7 +252,7 @@
                   Edit
                 </a>
                 <a href="{% url 'dashboard:product_delete' p.pk %}" 
-                   class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-medium text-xs transition">
+                   class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-semibold text-xs transition">
                   Delete
                 </a>
               </td>

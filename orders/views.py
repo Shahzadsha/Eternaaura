@@ -125,11 +125,13 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
         subtotal = cart.subtotal
         coupon_code = request.session.get("coupon_code")
         coupon = None
-        discount_total = 0
+        discount_total = Decimal("0.00")
         if coupon_code:
             coupon = Coupon.objects.filter(code__iexact=coupon_code, is_active=True).first()
             if coupon and coupon.is_valid_now(request.user):
-                discount_total = coupon.calculate_discount(subtotal)
+                discount_total = Decimal(str(coupon.calculate_discount(subtotal)))
+            else:
+                coupon = None
 
         store_settings = StoreSettings.get_solo()
         discounted_subtotal = max(0, subtotal - discount_total)
@@ -156,12 +158,21 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
         upi_link = f"upi://pay?pa={merchant_upi}&pn={merchant_name_enc}&am={grand_total:.2f}&cu=INR&tr={txn_ref}&tn=Order_Checkout"
         qr_preview_url = f"{reverse('payments:upi_qr_preview')}?am={grand_total:.2f}&tr={txn_ref}"
 
+        total_mrp = Decimal("0.00")
+        for item in cart.items.all():
+            comp_price = item.product.compare_at_price
+            item_mrp = comp_price if (comp_price and comp_price > item.unit_price) else item.unit_price
+            total_mrp += (item_mrp * item.quantity)
+        mrp_discount = max(Decimal("0.00"), total_mrp - subtotal)
+
         addresses = request.user.addresses.all()
         return render(request, "orders/checkout.html", {
             "cart": cart,
             "addresses": addresses,
             "is_buy_now": is_buy_now,
             "subtotal": subtotal,
+            "total_mrp": total_mrp,
+            "mrp_discount": mrp_discount,
             "coupon": coupon,
             "discount_total": discount_total,
             "shipping_fee": shipping_fee,
@@ -360,17 +371,6 @@ class OrderDetailView(NeverCacheLoginRequiredMixin, DetailView):
     context_object_name = "order"
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
-
-
-class OrderTrackView(NeverCacheLoginRequiredMixin, DetailView):
-    model = Order
-    template_name = "orders/track.html"
-    context_object_name = "order"
-
-    def get_queryset(self):
-        # Without this, any logged-in customer could track any other
-        # customer's order by guessing/knowing its ID.
         return Order.objects.filter(user=self.request.user)
 
 

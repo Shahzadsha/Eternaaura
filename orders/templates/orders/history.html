@@ -44,8 +44,8 @@
 
       <div class="flex items-center justify-between border-t border-ink/10 pt-4 mt-4 text-sm">
         <span class="text-ink/60">Grand Total: <strong class="text-ink font-serif text-base ml-1">₹{{ order.grand_total }}</strong></span>
-        <a href="{% url 'orders:track' order.id %}" class="text-xs font-medium px-4 py-2 rounded-full border border-ink/20 hover:border-gold hover:text-gold-dark transition-colors">
-          Track Package
+        <a href="{% url 'orders:detail' order.id %}" class="text-xs font-medium px-4 py-2 rounded-full border border-ink/20 hover:border-gold hover:text-gold-dark transition-colors">
+          View Details →
         </a>
       </div>
     </div>

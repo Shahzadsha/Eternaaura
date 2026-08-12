@@ -2,58 +2,130 @@
 {% block page_title %}Refunds &amp; Returns{% endblock %}
 
 {% block content %}
-<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl">
-  <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-    <h2 class="font-serif text-lg text-white font-medium">Return &amp; Refund Requests</h2>
-    <span class="text-xs text-gray-400">Total Requests: {{ refunds.paginator.count }}</span>
+<div class="space-y-6">
+
+  <!-- Mobile Header Bar (< 640px) -->
+  <div class="flex sm:hidden items-center justify-between gap-3 mb-2">
+    <div>
+      <h1 class="font-serif text-xl text-white font-bold tracking-tight">Returns &amp; Refunds</h1>
+      <p class="text-[11px] text-gray-400">Customer return requests</p>
+    </div>
+    <span class="px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono font-bold text-xs">
+      🔄 {{ refunds.paginator.count }} Requests
+    </span>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="w-full text-left text-xs">
-      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
-        <tr>
-          <th class="py-3 px-3">Request ID</th>
-          <th class="py-3 px-3">Order</th>
-          <th class="py-3 px-3">Customer</th>
-          <th class="py-3 px-3">Product</th>
-          <th class="py-3 px-3">Reason</th>
-          <th class="py-3 px-3">Status</th>
-          <th class="py-3 px-3 text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-white/5">
-        {% for r in refunds %}
-          <tr class="hover:bg-white/5 transition">
-            <td class="py-3 px-3 font-mono text-gold-light">#RET-{{ r.id }}</td>
-            <td class="py-3 px-3"><a href="{% url 'dashboard:order_detail' r.order.id %}" class="text-gold hover:underline">#{{ r.order.order_number }}</a></td>
-            <td class="py-3 px-3 text-gray-200">{{ r.order.user.get_full_name|default:r.order.user.username }}</td>
-            <td class="py-3 px-3 text-white font-medium">{{ r.order_item.product_name }}</td>
-            <td class="py-3 px-3 text-gray-400 max-w-xs truncate">{{ r.reason }}</td>
-            <td class="py-3 px-3">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
-                {% if r.status == 'approved' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
-                {% elif r.status == 'rejected' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
-                {% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
-                {{ r.get_status_display }}
-              </span>
-            </td>
-            <td class="py-3 px-3 text-right">
-              {% if r.status == 'requested' or r.status == 'pending' %}
-                <form action="{% url 'dashboard:refund_approve' r.id %}" method="post" class="inline-flex gap-1">
-                  {% csrf_token %}
-                  <button type="submit" name="action" value="approve" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold">Approve</button>
-                  <button type="submit" name="action" value="reject" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold">Reject</button>
-                </form>
-              {% else %}
-                <span class="text-[10px] text-gray-500">Processed</span>
-              {% endif %}
-            </td>
+  <div class="bg-panel border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl space-y-6">
+    <div class="hidden sm:flex items-center justify-between border-b border-white/10 pb-4">
+      <h2 class="font-serif text-lg text-white font-medium">Return &amp; Refund Requests</h2>
+      <span class="text-xs text-gray-400">Total Requests: {{ refunds.paginator.count }}</span>
+    </div>
+
+    <!-- Mobile Refund Cards List (< 640px) -->
+    <div class="block sm:hidden space-y-4">
+      {% for r in refunds %}
+        <div class="bg-panel2/60 border border-white/10 rounded-2xl p-4 shadow-lg space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="font-mono font-bold text-gold text-xs">#RET-{{ r.id }}</p>
+              <a href="{% url 'dashboard:order_detail' r.order.id %}" class="text-xs text-gold-light hover:underline font-semibold block mt-0.5">
+                Order #{{ r.order.order_number }}
+              </a>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase shrink-0
+              {% if r.status == 'approved' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+              {% elif r.status == 'rejected' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
+              {% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+              {{ r.get_status_display }}
+            </span>
+          </div>
+
+          <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Customer:</span>
+              <span class="text-gray-200 font-medium">{{ r.order.user.get_full_name|default:r.order.user.username }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Product:</span>
+              <span class="text-white font-medium truncate max-w-[180px]">{{ r.order_item.product_name }}</span>
+            </div>
+            <div class="pt-1 border-t border-white/5">
+              <span class="text-gray-400 block text-[11px]">Reason:</span>
+              <p class="text-gray-300 text-xs italic mt-0.5">{{ r.reason }}</p>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-white/5">
+            {% if r.status == 'requested' or r.status == 'pending' %}
+              <form action="{% url 'dashboard:refund_approve' r.id %}" method="post" class="flex gap-2">
+                {% csrf_token %}
+                <button type="submit" name="action" value="approve" 
+                        class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-md">
+                  Approve Return
+                </button>
+                <button type="submit" name="action" value="reject" 
+                        class="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md">
+                  Reject
+                </button>
+              </form>
+            {% else %}
+              <div class="text-center py-1 text-xs text-gray-400 font-medium bg-white/5 rounded-xl">Request Processed</div>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="text-center py-8 text-gray-500">No return or refund requests found.</div>
+      {% endfor %}
+    </div>
+
+    <!-- Desktop Refund Table View (>= 640px) -->
+    <div class="hidden sm:block overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+          <tr>
+            <th class="py-3 px-3">Request ID</th>
+            <th class="py-3 px-3">Order</th>
+            <th class="py-3 px-3">Customer</th>
+            <th class="py-3 px-3">Product</th>
+            <th class="py-3 px-3">Reason</th>
+            <th class="py-3 px-3">Status</th>
+            <th class="py-3 px-3 text-right">Actions</th>
           </tr>
-        {% empty %}
-          <tr><td colspan="7" class="py-8 text-center text-gray-500">No return or refund requests found.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for r in refunds %}
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-3 px-3 font-mono text-gold-light">#RET-{{ r.id }}</td>
+              <td class="py-3 px-3"><a href="{% url 'dashboard:order_detail' r.order.id %}" class="text-gold hover:underline">#{{ r.order.order_number }}</a></td>
+              <td class="py-3 px-3 text-gray-200">{{ r.order.user.get_full_name|default:r.order.user.username }}</td>
+              <td class="py-3 px-3 text-white font-medium">{{ r.order_item.product_name }}</td>
+              <td class="py-3 px-3 text-gray-400 max-w-xs truncate">{{ r.reason }}</td>
+              <td class="py-3 px-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                  {% if r.status == 'approved' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                  {% elif r.status == 'rejected' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
+                  {% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+                  {{ r.get_status_display }}
+                </span>
+              </td>
+              <td class="py-3 px-3 text-right">
+                {% if r.status == 'requested' or r.status == 'pending' %}
+                  <form action="{% url 'dashboard:refund_approve' r.id %}" method="post" class="inline-flex gap-1">
+                    {% csrf_token %}
+                    <button type="submit" name="action" value="approve" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold">Approve</button>
+                    <button type="submit" name="action" value="reject" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold">Reject</button>
+                  </form>
+                {% else %}
+                  <span class="text-[10px] text-gray-500">Processed</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="py-8 text-center text-gray-500">No return or refund requests found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

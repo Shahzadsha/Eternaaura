@@ -7,6 +7,15 @@ from .models import Coupon
 
 
 def _get_cart(request):
+    buy_now = request.session.get("buy_now_session")
+    if buy_now:
+        from catalog.models import Product
+        from orders.views import BuyNowCart
+        product = Product.objects.filter(pk=buy_now["product_id"], is_published=True).first()
+        if product and product.in_stock:
+            quantity = buy_now.get("quantity", 1)
+            return BuyNowCart(product, quantity)
+
     if request.user.is_authenticated:
         return Cart.objects.filter(user=request.user).first()
     session_key = request.session.session_key
@@ -18,25 +27,35 @@ def _get_cart(request):
 class ApplyCouponView(View):
     def post(self, request):
         code = request.POST.get("code", "").strip().upper()
+        redirect_url = request.META.get("HTTP_REFERER") or "cart:detail"
+
         if not code:
             messages.error(request, "Please enter a coupon code.")
-            return redirect(request.META.get("HTTP_REFERER", "cart:detail"))
+            return redirect(redirect_url)
 
-        coupon = Coupon.objects.filter(code__iexact=code, is_active=True).first()
-        if not coupon or not coupon.is_valid_now(request.user):
-            messages.error(request, "Invalid, expired, or already redeemed coupon code.")
-            return redirect(request.META.get("HTTP_REFERER", "cart:detail"))
+        coupon = Coupon.objects.filter(code__iexact=code).first()
+        if not coupon:
+            messages.error(request, f"Coupon code '{code}' does not exist.")
+            return redirect(redirect_url)
+
+        if not coupon.is_active:
+            messages.error(request, f"Coupon code '{code}' is currently inactive.")
+            return redirect(redirect_url)
+
+        if not coupon.is_valid_now(request.user):
+            messages.error(request, f"Coupon code '{code}' has expired or reached its usage limit.")
+            return redirect(redirect_url)
 
         cart = _get_cart(request)
         cart_subtotal = cart.subtotal if cart else 0
 
         if coupon.min_order_value and cart_subtotal < coupon.min_order_value:
             messages.error(request, f"Minimum order value for coupon '{code}' is ₹{coupon.min_order_value}.")
-            return redirect(request.META.get("HTTP_REFERER", "cart:detail"))
+            return redirect(redirect_url)
 
         request.session["coupon_code"] = coupon.code
-        messages.success(request, f"Coupon '{code}' applied successfully!")
-        return redirect(request.META.get("HTTP_REFERER", "cart:detail"))
+        messages.success(request, f"Coupon '{coupon.code}' applied successfully!")
+        return redirect(redirect_url)
 
 
 class RemoveCouponView(View):

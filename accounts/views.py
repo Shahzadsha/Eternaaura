@@ -9,6 +9,7 @@ from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -24,6 +25,28 @@ from .models import Address, OTPVerification, User
 
 
 MAX_OTP_ATTEMPTS = 5
+
+
+def send_otp_verification_email(user, code):
+    """
+    Renders and sends the luxury EternaAura OTP verification code email.
+    """
+    context = {
+        "user": user,
+        "user_display_name": user.first_name or user.username,
+        "code": code,
+    }
+    text_content = render_to_string("accounts/emails/verification_code_email.txt", context)
+    html_content = render_to_string("accounts/emails/verification_code_email.html", context)
+
+    send_mail(
+        subject="Your EternaAura verification code",
+        message=text_content,
+        html_message=html_content,
+        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
+        recipient_list=[user.email],
+        fail_silently=False,
+    )
 
 
 class RegisterView(View):
@@ -45,17 +68,7 @@ class RegisterView(View):
                 purpose=OTPVerification.Purpose.REGISTRATION,
                 expires_at=timezone.now() + timezone.timedelta(minutes=10),
             )
-            send_mail(
-                subject="Your EternaAura verification code",
-                message=(
-                    f"Hello {user.first_name or user.username},\n\n"
-                    f"Your EternaAura verification code is: {code}\n\n"
-                    f"This code will expire in 10 minutes."
-                ),
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
+            send_otp_verification_email(user, code)
             request.session["pending_verification_user_id"] = str(user.id)
             request.session["otp_attempts"] = 0
             messages.success(request, "Account created. Check your email for the OTP to verify your account.")
@@ -242,20 +255,28 @@ class ResendOTPView(View):
             purpose=OTPVerification.Purpose.REGISTRATION,
             expires_at=timezone.now() + timezone.timedelta(minutes=10),
         )
-        send_mail(
-            subject="Your EternaAura verification code",
-            message=(
-                f"Hello {user.first_name or user.username},\n\n"
-                f"Your new EternaAura verification code is: {code}\n\n"
-                f"This code will expire in 10 minutes."
-            ),
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        send_otp_verification_email(user, code)
         request.session["otp_attempts"] = 0
         messages.success(request, "A new code has been sent.")
         return redirect("accounts:verify_otp")
+
+
+class VerificationCodeEmailPreviewView(View):
+    """
+    Developer/Admin preview view for visual inspection of the luxury verification code email template.
+    """
+
+    def get(self, request):
+        user_display_name = request.GET.get("name", "Asdfgh")
+        code = request.GET.get("code", "206821")
+        user_obj = getattr(request, "user", None)
+        user = user_obj if (user_obj and user_obj.is_authenticated) else None
+        context = {
+            "user": user,
+            "user_display_name": user_display_name,
+            "code": code,
+        }
+        return render(request, "accounts/emails/verification_code_email.html", context)
 
 
 class PasswordResetRequestView(View):
@@ -274,20 +295,44 @@ class PasswordResetRequestView(View):
                 reset_url = request.build_absolute_uri(
                     reverse("accounts:password_reset_confirm", kwargs={"uidb64": uid, "token": token})
                 )
+                context = {
+                    "user": user,
+                    "user_display_name": user.first_name or user.username,
+                    "reset_url": reset_url,
+                }
+                text_content = render_to_string("accounts/emails/password_reset_email.txt", context)
+                html_content = render_to_string("accounts/emails/password_reset_email.html", context)
+
                 send_mail(
                     subject="EternaAura — Password Reset Request",
-                    message=(
-                        f"Hello {user.first_name or user.username},\n\n"
-                        f"We received a request to reset your password on EternaAura.\n\n"
-                        f"Click the link below to set a new password:\n{reset_url}\n\n"
-                        f"If you did not request a password reset, please ignore this email."
-                    ),
+                    message=text_content,
+                    html_message=html_content,
                     from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@eternaaura.com"),
                     recipient_list=[user.email],
                     fail_silently=not settings.DEBUG,
                 )
         messages.success(request, "If that email exists, a reset link has been sent.")
         return redirect("accounts:login")
+
+
+class PasswordResetEmailPreviewView(View):
+    """
+    Developer/Admin preview view for visual inspection of the luxury password reset email template.
+    """
+
+    def get(self, request):
+        sample_url = request.build_absolute_uri(
+            reverse("accounts:password_reset_confirm", kwargs={"uidb64": "sample-uid", "token": "sample-token"})
+        )
+        user_display_name = request.GET.get("name", "Najiha")
+        user_obj = getattr(request, "user", None)
+        user = user_obj if (user_obj and user_obj.is_authenticated) else None
+        context = {
+            "user": user,
+            "user_display_name": user_display_name,
+            "reset_url": sample_url,
+        }
+        return render(request, "accounts/emails/password_reset_email.html", context)
 
 
 class PasswordResetConfirmView(View):

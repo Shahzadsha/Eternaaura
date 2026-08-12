@@ -6,8 +6,9 @@ def wishlist_summary(request):
     Injects user_wishlist_ids (set of product UUID strings and objects) and
     wishlist_count into template context on every request.
     """
-    if request.user.is_authenticated:
-        raw_ids = list(Wishlist.objects.filter(user=request.user).values_list("product_id", flat=True))
+    user = getattr(request, "user", None)
+    if user and user.is_authenticated:
+        raw_ids = list(Wishlist.objects.filter(user=user).values_list("product_id", flat=True))
         wishlisted_ids = set(raw_ids) | {str(pid) for pid in raw_ids}
         return {
             "user_wishlist_ids": wishlisted_ids,

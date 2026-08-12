@@ -2,7 +2,7 @@
 {% block page_title %}Customer Profile — {{ customer.get_full_name|default:customer.username }}{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+<div class="hidden sm:flex mb-6 flex-wrap items-center justify-between gap-4">
   <div class="flex items-center gap-3">
     <a href="{% url 'dashboard:customers' %}" class="text-xs text-gold hover:text-gold-light">← Back to Customers</a>
     <h2 class="font-serif text-xl text-white font-bold">{{ customer.get_full_name|default:customer.username }}</h2>

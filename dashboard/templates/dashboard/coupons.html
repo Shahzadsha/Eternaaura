@@ -2,55 +2,121 @@
 {% block page_title %}Coupons &amp; Promotional Discounts{% endblock %}
 
 {% block content %}
-<div class="bg-panel border border-white/10 rounded-2xl p-6 shadow-xl mb-8">
-  <div class="flex items-center justify-between border-b border-white/10 pb-6 mb-6">
-    <h2 class="font-serif text-lg text-white font-medium">Active &amp; Past Coupons</h2>
-    <a href="{% url 'dashboard:coupon_create' %}" class="px-4 py-2 rounded-lg bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition">
-      + Create Coupon
+<div class="space-y-6">
+
+  <!-- Mobile Header Bar (< 640px) -->
+  <div class="flex sm:hidden items-center justify-between gap-3 mb-2">
+    <div>
+      <h1 class="font-serif text-xl text-white font-bold tracking-tight">Coupons</h1>
+      <p class="text-[11px] text-gray-400">Promotions &amp; discounts</p>
+    </div>
+    <a href="{% url 'dashboard:coupon_create' %}" 
+       class="px-3.5 py-2 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition shadow-md flex items-center gap-1.5 shrink-0">
+      <span class="text-sm font-bold">+</span> Create
     </a>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="w-full text-left text-xs">
-      <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
-        <tr>
-          <th class="py-3 px-3">Code</th>
-          <th class="py-3 px-3">Type</th>
-          <th class="py-3 px-3">Discount</th>
-          <th class="py-3 px-3">Min Order</th>
-          <th class="py-3 px-3">Times Used</th>
-          <th class="py-3 px-3">Valid Until</th>
-          <th class="py-3 px-3">Status</th>
-          <th class="py-3 px-3 text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-white/5">
-        {% for c in coupons %}
-          <tr class="hover:bg-white/5 transition">
-            <td class="py-3 px-3 font-mono font-bold text-gold-light">{{ c.code }}</td>
-            <td class="py-3 px-3 capitalize text-gray-300">{{ c.get_discount_type_display }}</td>
-            <td class="py-3 px-3 text-white font-semibold">
-              {{ c.formatted_discount_badge }}
-            </td>
-            <td class="py-3 px-3 text-gray-400">₹{{ c.min_order_value }}</td>
-            <td class="py-3 px-3 text-gray-300 font-bold">{{ c.times_used }} {% if c.usage_limit %}/ {{ c.usage_limit }}{% endif %}</td>
-            <td class="py-3 px-3 text-gray-400">{{ c.valid_until|date:"d M Y, H:i" }}</td>
-            <td class="py-3 px-3">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
-                {% if c.is_active %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% endif %}">
-                {% if c.is_active %}Active{% else %}Inactive{% endif %}
-              </span>
-            </td>
-            <td class="py-3 px-3 text-right space-x-2">
-              <a href="{% url 'dashboard:coupon_edit' c.id %}" class="text-gold hover:underline">Edit</a>
-              <a href="{% url 'dashboard:coupon_delete' c.id %}" class="text-rose-400 hover:underline">Delete</a>
-            </td>
+  <div class="bg-panel border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl mb-8 space-y-6">
+    <div class="hidden sm:flex items-center justify-between border-b border-white/10 pb-6">
+      <h2 class="font-serif text-lg text-white font-medium">Active &amp; Past Coupons</h2>
+      <a href="{% url 'dashboard:coupon_create' %}" class="px-4 py-2 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition shadow-md">
+        + Create Coupon
+      </a>
+    </div>
+
+    <!-- Mobile Coupon Cards List (< 640px) -->
+    <div class="block sm:hidden space-y-4">
+      {% for c in coupons %}
+        <div class="bg-panel2/60 border border-white/10 rounded-2xl p-4 shadow-lg space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="font-mono font-bold text-gold text-base">{{ c.code }}</p>
+              <p class="text-[11px] text-gray-400 capitalize mt-0.5">{{ c.get_discount_type_display }}</p>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase shrink-0
+              {% if c.is_active %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% endif %}">
+              {% if c.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </div>
+
+          <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Discount Value:</span>
+              <span class="text-white font-bold">{{ c.formatted_discount_badge }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Min Order Value:</span>
+              <span class="text-gray-300">₹{{ c.min_order_value }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Times Used:</span>
+              <span class="text-gray-200 font-bold">{{ c.times_used }} {% if c.usage_limit %}/ {{ c.usage_limit }}{% endif %}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Valid Until:</span>
+              <span class="text-gray-300 font-mono text-[11px]">{{ c.valid_until|date:"d M Y, H:i" }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+            <a href="{% url 'dashboard:coupon_edit' c.id %}" 
+               class="flex-1 py-2 text-center rounded-xl bg-white/5 hover:bg-gold hover:text-black border border-white/10 text-gray-300 font-semibold text-xs transition">
+              Edit Coupon
+            </a>
+            <a href="{% url 'dashboard:coupon_delete' c.id %}" 
+               class="flex-1 py-2 text-center rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-semibold text-xs transition">
+              Delete
+            </a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="text-center py-8 text-gray-500">No coupons created yet.</div>
+      {% endfor %}
+    </div>
+
+    <!-- Desktop Coupon Table View (>= 640px) -->
+    <div class="hidden sm:block overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="text-gray-400 border-b border-white/5 uppercase text-[10px]">
+          <tr>
+            <th class="py-3 px-3">Code</th>
+            <th class="py-3 px-3">Type</th>
+            <th class="py-3 px-3">Discount</th>
+            <th class="py-3 px-3">Min Order</th>
+            <th class="py-3 px-3">Times Used</th>
+            <th class="py-3 px-3">Valid Until</th>
+            <th class="py-3 px-3">Status</th>
+            <th class="py-3 px-3 text-right">Actions</th>
           </tr>
-        {% empty %}
-          <tr><td colspan="8" class="py-8 text-center text-gray-500">No coupons created yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for c in coupons %}
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-3 px-3 font-mono font-bold text-gold-light">{{ c.code }}</td>
+              <td class="py-3 px-3 capitalize text-gray-300">{{ c.get_discount_type_display }}</td>
+              <td class="py-3 px-3 text-white font-semibold">
+                {{ c.formatted_discount_badge }}
+              </td>
+              <td class="py-3 px-3 text-gray-400">₹{{ c.min_order_value }}</td>
+              <td class="py-3 px-3 text-gray-300 font-bold">{{ c.times_used }} {% if c.usage_limit %}/ {{ c.usage_limit }}{% endif %}</td>
+              <td class="py-3 px-3 text-gray-400">{{ c.valid_until|date:"d M Y, H:i" }}</td>
+              <td class="py-3 px-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                  {% if c.is_active %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% endif %}">
+                  {% if c.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+              </td>
+              <td class="py-3 px-3 text-right space-x-2">
+                <a href="{% url 'dashboard:coupon_edit' c.id %}" class="text-gold hover:underline">Edit</a>
+                <a href="{% url 'dashboard:coupon_delete' c.id %}" class="text-rose-400 hover:underline">Delete</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="py-8 text-center text-gray-500">No coupons created yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -1,28 +1,74 @@
 {% extends "dashboard/base.html" %}
 {% block page_title %}Homepage Banners{% endblock %}
+
 {% block content %}
-<div class="flex justify-between items-center mb-6">
-  <p class="text-sm text-gray-500">{{ banners.count }} banners</p>
-  <a href="{% url 'dashboard:banner_create' %}" class="text-xs bg-gold text-ink font-semibold px-4 py-2 rounded-lg hover:bg-gold-light transition">+ Add Banner</a>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-  {% for b in banners %}
-  <div class="bg-panel border border-white/10 rounded-xl overflow-hidden">
-    {% if b.image %}<img src="{{ b.image.url }}" class="w-full h-40 object-cover">{% endif %}
-    <div class="p-4">
-      <div class="flex justify-between items-start mb-2">
-        <h3 class="font-serif text-white">{{ b.title }}</h3>
-        {% if b.is_active %}<span class="text-emerald-400 text-xs">Active</span>{% else %}<span class="text-gray-500 text-xs">Inactive</span>{% endif %}
-      </div>
-      <p class="text-sm text-gray-400 mb-4">{{ b.subtitle }}</p>
-      <div class="space-x-3">
-        <a href="{% url 'dashboard:banner_edit' b.pk %}" class="text-gold-light hover:underline text-xs">Edit</a>
-        <a href="{% url 'dashboard:banner_delete' b.pk %}" class="text-red-400 hover:underline text-xs">Delete</a>
-      </div>
+<div class="space-y-6">
+
+  <!-- Mobile Header Bar (< 640px) -->
+  <div class="flex sm:hidden items-center justify-between gap-3 mb-2">
+    <div>
+      <h1 class="font-serif text-xl text-white font-bold tracking-tight">Homepage Banners</h1>
+      <p class="text-[11px] text-gray-400">Hero &amp; showcase banners</p>
     </div>
+    <a href="{% url 'dashboard:banner_create' %}" 
+       class="px-3.5 py-2 rounded-xl bg-gold hover:bg-gold-dark text-black font-semibold text-xs transition shadow-md flex items-center gap-1.5 shrink-0">
+      <span class="text-sm font-bold">+</span> Add Banner
+    </a>
   </div>
-  {% empty %}
-  <p class="text-gray-500 col-span-2 text-center py-8">No banners yet.</p>
-  {% endfor %}
+
+  <!-- Desktop Header Bar (>= 640px) -->
+  <div class="hidden sm:flex justify-between items-center pb-4 border-b border-white/10">
+    <div>
+      <h1 class="font-serif text-2xl text-white font-bold tracking-tight">Homepage Banners</h1>
+      <p class="text-xs text-gray-400 mt-0.5">{{ banners.count }} active &amp; inactive banners</p>
+    </div>
+    <a href="{% url 'dashboard:banner_create' %}" class="text-xs bg-gold text-black font-semibold px-4 py-2.5 rounded-xl hover:bg-gold-dark transition shadow-md flex items-center gap-1.5">
+      <span class="font-bold text-sm">+</span> Add Banner
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    {% for b in banners %}
+      <div class="bg-panel border border-white/10 rounded-2xl overflow-hidden shadow-xl space-y-3">
+        {% if b.image %}
+          <div class="h-44 w-full bg-black/40 overflow-hidden relative">
+            <img src="{{ b.image.url }}" class="w-full h-full object-cover">
+            <span class="absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase shadow-md
+              {% if b.is_active %}bg-emerald-500/80 text-white{% else %}bg-gray-800/80 text-gray-300{% endif %}">
+              {% if b.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </div>
+        {% endif %}
+        <div class="p-4 pt-1 space-y-2">
+          <div class="flex justify-between items-start">
+            <h3 class="font-serif text-white font-bold text-base">{{ b.title }}</h3>
+            {% if not b.image %}
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase
+                {% if b.is_active %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-gray-500/20 text-gray-400 border border-gray-500/30{% endif %}">
+                {% if b.is_active %}Active{% else %}Inactive{% endif %}
+              </span>
+            {% endif %}
+          </div>
+          {% if b.subtitle %}
+            <p class="text-xs text-gray-400 leading-relaxed">{{ b.subtitle }}</p>
+          {% endif %}
+          <div class="flex items-center gap-3 pt-2 border-t border-white/5">
+            <a href="{% url 'dashboard:banner_edit' b.pk %}" 
+               class="flex-1 py-2 text-center rounded-xl bg-white/5 hover:bg-gold hover:text-black border border-white/10 text-gray-300 font-semibold text-xs transition">
+              Edit Banner
+            </a>
+            <a href="{% url 'dashboard:banner_delete' b.pk %}" 
+               class="flex-1 py-2 text-center rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-400 font-semibold text-xs transition">
+              Delete
+            </a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="bg-panel border border-white/10 rounded-2xl p-8 col-span-1 md:col-span-2 text-center text-gray-500">
+        No banners added yet.
+      </div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}
