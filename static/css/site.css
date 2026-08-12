@@ -7,6 +7,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
   background-color: #f8f4ec;
   width: 100%;
   max-width: 100%;
@@ -23,6 +25,7 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: clip;
+  touch-action: manipulation;
 }
 
 /* Fluid Container Bounds */
