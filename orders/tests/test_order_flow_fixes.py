@@ -177,16 +177,17 @@ class OrderFlowFixesTest(TestCase):
         query_params = urllib.parse.parse_qs(parsed.query)
         msg_text = query_params["text"][0]
 
+        # Verify product image is prominently at the top
+        self.assertTrue(msg_text.startswith("🖼 *PRODUCT IMAGE*"))
+        self.assertIn("products/diamond-ring.jpg", msg_text)
+
         # Verify professional section headers
         self.assertIn("ETERNAAURA — NEW ORDER PLACED", msg_text)
         self.assertIn("ORDER INFORMATION", msg_text)
         self.assertIn("CUSTOMER DETAILS", msg_text)
-        self.assertIn("ORDERED ITEMS", msg_text)
+        self.assertIn("ORDERED PRODUCTS", msg_text)
         self.assertIn("PAYMENT SUMMARY", msg_text)
-
-        # Verify product image URL is included
-        self.assertIn("🖼 Image:", msg_text)
-        self.assertIn("products/diamond-ring.jpg", msg_text)
+        self.assertIn("ORDER NOTE", msg_text)
 
         # Verify Transaction Ref is COMPLETELY ABSENT
         self.assertNotIn("Transaction Ref", msg_text)

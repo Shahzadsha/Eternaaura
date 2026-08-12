@@ -296,8 +296,9 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                     upi_link=upi_link,
                 )
 
+                image_urls = []
                 items_summary_lines = []
-                for idx, item in enumerate(cart.items.all(), start=1):
+                for item in cart.items.all():
                     OrderItem.objects.create(
                         order=order,
                         product=item.product,
@@ -309,20 +310,21 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
 
                     # Obtain product image URL (Cloudinary absolute URL or build_absolute_uri)
                     img_obj = item.product.images.first()
-                    img_url = ""
                     if img_obj and img_obj.image:
                         try:
                             raw_url = img_obj.image.url
                             if raw_url.startswith("http://") or raw_url.startswith("https://"):
-                                img_url = raw_url
+                                image_urls.append(raw_url)
                             else:
-                                img_url = request.build_absolute_uri(raw_url)
+                                image_urls.append(request.build_absolute_uri(raw_url))
                         except Exception:
-                            img_url = ""
+                            pass
 
-                    item_text = f"{idx}. *{item.product.name}*\n   • Qty: {item.quantity} | Unit Price: ₹{item.unit_price:,.2f} | Total: ₹{item.line_total:,.2f}"
-                    if img_url:
-                        item_text += f"\n   • 🖼 Image: {img_url}"
+                    item_text = (
+                        f"· *{item.product.name}*\n"
+                        f"  Quantity: {item.quantity} × ₹{item.unit_price:,.2f}\n"
+                        f"  Item Total: ₹{item.line_total:,.2f}"
+                    )
                     items_summary_lines.append(item_text)
 
                     # Deduct stock with row locking
@@ -335,35 +337,45 @@ class CheckoutView(NeverCacheLoginRequiredMixin, View):
                 else:
                     cart.items.all().delete()
 
-            # Format complete WhatsApp order message
+            # Format product image section at the top of the message
+            image_section = ""
+            if image_urls:
+                if len(image_urls) == 1:
+                    image_section = f"🖼 *PRODUCT IMAGE*\n{image_urls[0]}\n\n"
+                else:
+                    imgs_formatted = "\n".join([f"· {url}" for url in image_urls])
+                    image_section = f"🖼 *PRODUCT IMAGES*\n{imgs_formatted}\n\n"
+
             items_text = "\n\n".join(items_summary_lines)
             addr = order.shipping_address
             address_str = f"{addr.line1}" + (f", {addr.line2}" if addr.line2 else "") + f", {addr.city}, {addr.state} - {addr.postal_code}"
             shipping_str = "FREE" if order.shipping_fee == 0 else f"₹{order.shipping_fee:,.2f}"
 
-            discount_str = f"\n• *Discount:* -₹{order.discount_total:,.2f}" if order.discount_total > 0 else ""
-            tax_str = f"\n• *Tax:* ₹{order.tax_total:,.2f}" if order.tax_total > 0 else ""
+            discount_str = f"\n· *Discount:* -₹{order.discount_total:,.2f}" if order.discount_total > 0 else ""
+            tax_str = f"\n· *Tax:* ₹{order.tax_total:,.2f}" if order.tax_total > 0 else ""
 
             whatsapp_msg = (
+                f"{image_section}"
                 f"✨ *ETERNAAURA — NEW ORDER PLACED* ✨\n\n"
                 f"📌 *ORDER INFORMATION*\n"
-                f"• *Order ID:* #{order.order_number}\n"
-                f"• *Date & Time:* {order.placed_at.strftime('%B %d, %Y at %I:%M %p')}\n"
-                f"• *Payment Method:* {order.payment_gateway_display}\n"
-                f"• *Payment Status:* {order.payment_status_display}\n\n"
+                f"· *Order ID:* #{order.order_number}\n"
+                f"· *Date & Time:* {order.placed_at.strftime('%B %d, %Y at %I:%M %p')}\n"
+                f"· *Payment Method:* {order.payment_gateway_display}\n"
+                f"· *Payment Status:* {order.payment_status_display}\n\n"
                 f"👤 *CUSTOMER DETAILS*\n"
-                f"• *Name:* {addr.full_name}\n"
-                f"• *Phone:* {addr.phone_number}\n"
-                f"• *Shipping Address:* {address_str}\n\n"
-                f"💎 *ORDERED ITEMS*\n"
+                f"· *Name:* {addr.full_name}\n"
+                f"· *Phone:* {addr.phone_number}\n"
+                f"· *Shipping Address:* {address_str}\n\n"
+                f"💎 *ORDERED PRODUCTS*\n"
                 f"{items_text}\n\n"
                 f"💰 *PAYMENT SUMMARY*\n"
-                f"• *Subtotal:* ₹{order.subtotal:,.2f}"
+                f"· *Subtotal:* ₹{order.subtotal:,.2f}"
                 f"{discount_str}\n"
-                f"• *Shipping Charge:* {shipping_str}"
+                f"· *Shipping:* {shipping_str}"
                 f"{tax_str}\n"
-                f"• *Grand Total:* ₹{order.grand_total:,.2f}\n\n"
-                f"📝 *ORDER NOTE:* Customer completed checkout and submitted order."
+                f"· *Grand Total:* ₹{order.grand_total:,.2f}\n\n"
+                f"📝 *ORDER NOTE*\n"
+                f"Customer completed checkout and submitted order."
             )
 
             target_phone = re.sub(r"\D", "", store_settings.whatsapp_notify_number)
