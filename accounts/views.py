@@ -484,5 +484,5 @@ class WishlistView(NeverCacheLoginRequiredMixin, ListView):
     context_object_name = "wishlist_items"
 
     def get_queryset(self):
-        return Wishlist.objects.filter(user=self.request.user).select_related("product")
+        return Wishlist.objects.filter(user=self.request.user).select_related("product", "product__category").prefetch_related("product__images")
 

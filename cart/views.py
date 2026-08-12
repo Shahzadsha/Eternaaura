@@ -34,6 +34,10 @@ from coupons.models import Coupon
 class CartDetailView(View):
     def get(self, request):
         cart = _get_or_create_cart(request)
+        # Prefetch items with product, category, images, and variant to prevent N+1 queries
+        items = cart.items.select_related("product", "product__category", "variant").prefetch_related("product__images")
+        cart.prefetched_items = items
+
         coupon_code = request.session.get("coupon_code")
         coupon = None
         discount_amount = 0

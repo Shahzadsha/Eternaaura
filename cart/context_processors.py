@@ -1,3 +1,4 @@
+from django.db import models
 from .models import Cart
 
 
@@ -14,6 +15,9 @@ def _get_cart(request):
 
 def cart_summary(request):
     cart = _get_cart(request)
+    if not cart:
+        return {"cart_item_count": 0}
+    count = cart.items.aggregate(total=models.Sum("quantity"))["total"] or 0
     return {
-        "cart_item_count": cart.item_count if cart else 0,
+        "cart_item_count": count,
     }

@@ -44,6 +44,24 @@ class Order(models.Model):
             self.order_number = f"EA{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
 
+    @property
+    def latest_payment(self):
+        return self.payments.order_by("-created_at").first()
+
+    @property
+    def payment_gateway_display(self):
+        pay = self.latest_payment
+        if pay:
+            return pay.get_gateway_display()
+        return "Online Payment (UPI QR)"
+
+    @property
+    def payment_status_display(self):
+        pay = self.latest_payment
+        if pay:
+            return pay.get_status_display()
+        return self.get_status_display()
+
     def __str__(self):
         return self.order_number
 

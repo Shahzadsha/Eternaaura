@@ -8,8 +8,12 @@
 <section x-data="{ slide: 0, slides: {{ banners|length|default:3 }} }" x-init="setInterval(() => slide = (slide + 1) % slides, 5000)" class="relative w-full max-w-full h-[52vh] sm:h-[80vh] min-h-[350px] sm:min-h-[520px] overflow-hidden bg-ink">
   {% for banner in banners %}
   <div x-show="slide === {{ forloop.counter0 }}" x-transition:enter="transition ease-out duration-700" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="absolute inset-0">
-    {% if banner.image %}<img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="w-full h-full object-cover object-top opacity-70">{% endif %}
-    <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent"></div>
+    {% if banner.image %}
+      <img src="{{ banner.image|optimized_image_url:1200 }}" alt="{{ banner.title }}"
+           {% if forloop.first %}fetchpriority="high" loading="eager"{% else %}loading="lazy"{% endif %} decoding="async"
+           class="w-full h-full object-cover object-top opacity-90 sm:opacity-95">
+    {% endif %}
+    <div class="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent"></div>
     <div class="absolute inset-0 flex items-end sm:items-center">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pb-14 sm:py-8 w-full text-left">
         <p class="font-accent text-gold-light text-xs sm:text-xl tracking-[0.2em] mb-1 sm:mb-3 font-semibold">ETERNAAURA PRESENTS</p>
@@ -58,7 +62,7 @@
       {% for category in categories %}
       <div class="swiper-slide h-auto">
         <a href="{{ category.get_absolute_url }}" class="group relative rounded-2xl overflow-hidden aspect-[4/5] bg-champagne shadow-sm hover:shadow-xl transition-all duration-300 block w-full h-full">
-          {% if category.image %}<img src="{{ category.image.url }}" alt="{{ category.name }}" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">{% endif %}
+          {% if category.image %}<img src="{{ category.image|optimized_image_url:600 }}" alt="{{ category.name }}" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">{% endif %}
           <div class="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent"></div>
           <span class="absolute bottom-4 left-0 right-0 text-center font-serif text-cream text-base sm:text-lg tracking-wide px-3">{{ category.name }}</span>
         </a>
@@ -83,9 +87,9 @@
     <p class="font-accent text-gold-light text-base sm:text-lg tracking-widest mb-2 sm:mb-3">OUR STORY</p>
     <h2 class="font-serif text-2xl sm:text-3xl md:text-4xl mb-4 sm:mb-6">Crafted for Legacy, Worn with Grace</h2>
     <p class="text-cream/70 text-sm sm:text-base leading-relaxed max-w-3xl mx-auto">
-      ETERNAAURA is a house of fine jewellery built on three principles: uncompromising craftsmanship,
-      ethically sourced gold and gemstones, and designs meant to be passed down through generations.
-      Every piece is hand-finished by master artisans and certified for purity — so what you wear today
+      ETERNAAURA is a house of fine anti-tarnished jewellery built on principles: uncompromising craftsmanship,
+      and designs meant to be passed down through generations.
+      Every piece is hand-finished by master artisans — so what you wear today
       becomes tomorrow's heirloom.
     </p>
   </div>

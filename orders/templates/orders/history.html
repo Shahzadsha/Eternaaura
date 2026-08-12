@@ -13,24 +13,21 @@
           <p class="font-serif text-lg font-medium text-ink">Order #{{ order.order_number }}</p>
           <p class="text-xs text-ink/50">Placed on {{ order.placed_at|date:"N j, Y, g:i a" }}</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div>
           <span class="px-3 py-1 rounded-full text-xs font-medium bg-gold/15 text-gold-dark uppercase tracking-wider">
             {{ order.get_status_display }}
           </span>
-          <a href="{% url 'orders:detail' order.id %}" class="text-xs font-medium text-ink hover:text-gold-dark underline">
-            View Details →
-          </a>
         </div>
       </div>
 
       <div class="space-y-3">
         {% for item in order.items.all %}
         <div class="flex items-center gap-4">
-          <div class="w-16 h-16 rounded-xl bg-champagne overflow-hidden shrink-0">
+          <a href="{{ item.product.get_absolute_url }}" class="block w-16 h-16 rounded-xl bg-champagne overflow-hidden shrink-0 hover:opacity-90 transition-opacity">
             {% with img=item.product.images.first %}
-            {% if img %}<img src="{{ img.image.url }}" class="w-full h-full object-cover">{% endif %}
+            {% if img %}<img src="{{ img.image.url }}" alt="{{ item.product_name_snapshot }}" class="w-full h-full object-cover">{% endif %}
             {% endwith %}
-          </div>
+          </a>
           <div class="flex-1">
             <a href="{{ item.product.get_absolute_url }}" class="font-serif text-sm hover:text-gold-dark font-medium">{{ item.product_name_snapshot }}</a>
             <p class="text-xs text-ink/50">Quantity: {{ item.quantity }} × ₹{{ item.unit_price_snapshot }}</p>

@@ -15,9 +15,9 @@ class HomeView(TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["banners"] = HeroBanner.objects.filter(is_active=True).order_by("display_order", "-created_at")
         ctx["categories"] = Category.objects.filter(is_active=True, parent__isnull=True).order_by("display_order", "name")
-        ctx["new_arrivals"] = Product.objects.filter(is_published=True, is_new_arrival=True)[:8]
-        ctx["best_sellers"] = Product.objects.filter(is_published=True, is_best_seller=True)[:8]
-        ctx["trending"] = Product.objects.filter(is_published=True, is_trending=True)[:8]
+        ctx["new_arrivals"] = Product.objects.filter(is_published=True, is_new_arrival=True).select_related("category").prefetch_related("images")[:8]
+        ctx["best_sellers"] = Product.objects.filter(is_published=True, is_best_seller=True).select_related("category").prefetch_related("images")[:8]
+        ctx["trending"] = Product.objects.filter(is_published=True, is_trending=True).select_related("category").prefetch_related("images")[:8]
         active_collections = list(Collection.objects.filter(is_active=True))
         ctx["collections"] = active_collections
         ctx["bridal"] = Collection.objects.filter(is_active=True, slug="bridal-collection").first() or (active_collections[0] if active_collections else None)
@@ -106,7 +106,7 @@ def build_catalog_context(base_qs, request):
     gemstones_raw = list(base_qs.values_list("gemstone", flat=True).distinct())
     available_gemstones = [g for g in gemstones_raw if g]
 
-    filtered_qs = apply_catalog_filtering_and_sorting(base_qs, request)
+    filtered_qs = apply_catalog_filtering_and_sorting(base_qs, request).select_related("category").prefetch_related("images")
 
     GET = request.GET if hasattr(request, 'GET') else request
 
@@ -188,7 +188,7 @@ class ProductDetailView(DetailView):
     context_object_name = "product"
 
     def get_queryset(self):
-        qs = Product.objects.all()
+        qs = Product.objects.select_related("category").prefetch_related("images", "variants", "variants__values")
         if not (self.request.user.is_authenticated and self.request.user.is_staff):
             qs = qs.filter(is_published=True)
         return qs
@@ -199,8 +199,8 @@ class ProductDetailView(DetailView):
 
         related = Product.objects.filter(
             is_published=True, category=product.category
-        ).exclude(pk=product.pk).order_by("-is_best_seller", "-average_rating")[:8]
-        manual_related = product.manually_related_products.filter(is_published=True)
+        ).exclude(pk=product.pk).select_related("category").prefetch_related("images").order_by("-is_best_seller", "-average_rating")[:8]
+        manual_related = product.manually_related_products.filter(is_published=True).select_related("category").prefetch_related("images")
         ctx["related_products"] = manual_related if manual_related.exists() else related
 
         # Fetch sibling color variant products matching exact name AND category
@@ -239,7 +239,7 @@ class ProductDetailView(DetailView):
             RecentlyViewed.objects.update_or_create(user=self.request.user, product=product)
             ctx["recently_viewed"] = RecentlyViewed.objects.filter(
                 user=self.request.user
-            ).exclude(product=product)[:8]
+            ).exclude(product=product).select_related("product__category").prefetch_related("product__images")[:8]
             ctx["is_wishlisted"] = Wishlist.objects.filter(user=self.request.user, product=product).exists()
         return ctx
 

@@ -29,3 +29,28 @@ def render_stars(value):
         else:
             stars_html += '<span class="text-ink/20">★</span>'
     return mark_safe(stars_html)
+
+
+@register.filter
+def optimized_image_url(image_field, width=None):
+    """
+    Optimizes Cloudinary and media URLs with auto-format (f_auto)
+    and auto-quality (q_auto), plus optional width constraint.
+    """
+    if not image_field:
+        return ""
+    try:
+        url = image_field.url
+    except Exception:
+        url = str(image_field)
+
+    if not url:
+        return ""
+
+    if "res.cloudinary.com" in url or "cloudinary" in url:
+        transforms = "f_auto,q_auto"
+        if width:
+            transforms += f",w_{width},c_limit"
+        if "/upload/" in url:
+            return url.replace("/upload/", f"/upload/{transforms}/")
+    return url

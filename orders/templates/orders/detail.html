@@ -23,9 +23,9 @@
     </div>
 
     <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
-      <h3 class="font-serif text-base font-semibold mb-2">Payment Status</h3>
-      <p class="text-sm text-ink font-medium">Cash on Delivery (COD)</p>
-      <p class="text-xs text-ink/60 mt-1">Status: <span class="text-gold-dark font-medium uppercase">{{ order.get_status_display }}</span></p>
+      <h3 class="font-serif text-base font-semibold mb-2">Payment Details</h3>
+      <p class="text-sm text-ink font-medium">{{ order.payment_gateway_display }}</p>
+      <p class="text-xs text-ink/60 mt-1">Status: <span class="text-gold-dark font-medium uppercase">{{ order.payment_status_display }}</span></p>
     </div>
   </div>
 
@@ -36,11 +36,11 @@
       {% for item in order.items.all %}
       <div class="flex items-center justify-between border-b border-ink/5 pb-4 last:border-0 last:pb-0">
         <div class="flex items-center gap-4">
-          <div class="w-16 h-16 rounded-xl bg-champagne overflow-hidden shrink-0">
+          <a href="{{ item.product.get_absolute_url }}" class="block w-16 h-16 rounded-xl bg-champagne overflow-hidden shrink-0 hover:opacity-90 transition-opacity">
             {% with img=item.product.images.first %}
-            {% if img %}<img src="{{ img.image.url }}" class="w-full h-full object-cover">{% endif %}
+            {% if img %}<img src="{{ img.image.url }}" alt="{{ item.product_name_snapshot }}" class="w-full h-full object-cover">{% endif %}
             {% endwith %}
-          </div>
+          </a>
           <div>
             <a href="{{ item.product.get_absolute_url }}" class="font-serif text-base hover:text-gold-dark font-medium">{{ item.product_name_snapshot }}</a>
             <p class="text-xs text-ink/50 mt-0.5">Quantity: {{ item.quantity }} × ₹{{ item.unit_price_snapshot }}</p>
@@ -63,7 +63,13 @@
 
     <div class="border-t border-ink/10 pt-4 mt-6 space-y-2 text-sm max-w-xs ml-auto">
       <div class="flex justify-between text-ink/70"><span>Subtotal</span><span>₹{{ order.subtotal }}</span></div>
-      <div class="flex justify-between text-ink/70"><span>Shipping</span><span>₹{{ order.shipping_fee }}</span></div>
+      {% if order.discount_total > 0 %}
+      <div class="flex justify-between text-emerald-700 font-medium"><span>Discount {% if order.coupon %}({{ order.coupon.code }}){% endif %}</span><span>-₹{{ order.discount_total }}</span></div>
+      {% endif %}
+      <div class="flex justify-between text-ink/70"><span>Delivery Charges</span><span>{% if order.shipping_fee == 0 %}<span class="text-emerald-700 font-medium">FREE</span>{% else %}₹{{ order.shipping_fee }}{% endif %}</span></div>
+      {% if order.tax_total > 0 %}
+      <div class="flex justify-between text-ink/70"><span>Tax</span><span>₹{{ order.tax_total }}</span></div>
+      {% endif %}
       <div class="flex justify-between font-serif text-xl font-bold text-ink pt-2 border-t border-ink/10">
         <span>Grand Total</span><span>₹{{ order.grand_total }}</span>
       </div>

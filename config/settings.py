@@ -212,6 +212,17 @@ else:
 
 MEDIA_ROOT = BASE_DIR / "media"
 
+# ---------------------------------------------------------------------------
+# Caching & Static Optimization
+# ---------------------------------------------------------------------------
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "eternaaura-locmem-cache",
+    }
+}
+WHITENOISE_MAX_AGE = 31536000
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------

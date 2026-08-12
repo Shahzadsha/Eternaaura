@@ -62,7 +62,7 @@ class PaymentStatusView(LoginRequiredMixin, View):
         return JsonResponse({
             "order_number": order.order_number,
             "status": order.status,
-            "payment_status": latest_payment.status if latest_payment else "cod",
+            "payment_status": latest_payment.status if latest_payment else "pending",
             "transaction_ref": latest_payment.transaction_ref if latest_payment else "",
             "grand_total": str(order.grand_total),
         })

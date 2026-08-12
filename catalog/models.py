@@ -36,8 +36,10 @@ class Category(TimeStamped):
         ordering = ["display_order", "name"]
 
     def save(self, *args, **kwargs):
+        from django.core.cache import cache
+        cache.delete("nav_categories_data")
         if not self.slug:
-            base_slug = slugify(self.name)[:100] or "category"
+            base_slug = str(slugify(str(self.name)))[:100] or "category"
             slug = base_slug
             counter = 1
             qs = Category.objects.filter(slug=slug)
@@ -49,8 +51,13 @@ class Category(TimeStamped):
                 qs = Category.objects.filter(slug=slug)
                 if self.pk:
                     qs = qs.exclude(pk=self.pk)
-            self.slug = slug
+            self.slug = slug  # type: ignore
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        from django.core.cache import cache
+        cache.delete("nav_categories_data")
+        super().delete(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("catalog:category_detail", kwargs={"slug": self.slug})
@@ -68,8 +75,10 @@ class Collection(TimeStamped):
     is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
+        from django.core.cache import cache
+        cache.delete("nav_categories_data")
         if not self.slug:
-            base_slug = slugify(self.name)[:120] or "collection"
+            base_slug = str(slugify(str(self.name)))[:120] or "collection"
             slug = base_slug
             counter = 1
             qs = Collection.objects.filter(slug=slug)
@@ -81,8 +90,13 @@ class Collection(TimeStamped):
                 qs = Collection.objects.filter(slug=slug)
                 if self.pk:
                     qs = qs.exclude(pk=self.pk)
-            self.slug = slug
+            self.slug = slug  # type: ignore
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        from django.core.cache import cache
+        cache.delete("nav_categories_data")
+        super().delete(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("catalog:collection_detail", kwargs={"slug": self.slug})
@@ -141,11 +155,15 @@ class Product(TimeStamped):
         indexes = [
             models.Index(fields=["slug"]),
             models.Index(fields=["is_published", "is_featured"]),
+            models.Index(fields=["is_published", "is_new_arrival"]),
+            models.Index(fields=["is_published", "is_best_seller"]),
+            models.Index(fields=["is_published", "is_trending"]),
+            models.Index(fields=["is_published", "category"]),
         ]
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.name)[:200] or "product"
+            base_slug = str(slugify(str(self.name)))[:200] or "product"
             slug = base_slug
             counter = 1
             qs = Product.objects.filter(slug=slug)
@@ -157,7 +175,7 @@ class Product(TimeStamped):
                 qs = Product.objects.filter(slug=slug)
                 if self.pk:
                     qs = qs.exclude(pk=self.pk)
-            self.slug = slug
+            self.slug = slug  # type: ignore
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):

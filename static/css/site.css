@@ -9,7 +9,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
-  background-color: #f8f4ec;
+  background-color: #faf8f5;
   width: 100%;
   max-width: 100%;
   margin: 0;
@@ -18,8 +18,8 @@ html {
 }
 
 body {
-  background-color: #f8f4ec;
-  color: #0b0b0c;
+  background-color: #faf8f5;
+  color: #111113;
   width: 100%;
   max-width: 100%;
   margin: 0;
@@ -46,18 +46,20 @@ header, main, footer, section {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #8a6f28;
+  background: #9b7b38;
   border-radius: 9999px;
-  border: 2px solid #f8f4ec;
+  border: 2px solid #faf8f5;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b7973f;
+  background: #c5a059;
 }
 
 /* Selection Color */
 ::selection {
-  background: #b7973f;
+  background: #c5a059;
+  color: #ffffff;
+}
   color: #0b0b0c;
 }
 
