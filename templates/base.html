@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="bg-cream w-full max-w-full m-0 p-0 overflow-x-clip">
 <head>
 
 <meta charset="UTF-8">
@@ -81,23 +81,24 @@
     opacity: 0.35;
     cursor: not-allowed;
   }
-  /* Prevent horizontal scroll clipping for elevated cards */
+  /* Prevent horizontal scroll clipping for elevated cards without negative margin overflow */
   .swiper-luxury-padding {
-    padding: 12px 6px 24px 6px !important;
-    margin-left: -6px !important;
-    margin-right: -6px !important;
+    padding: 12px 4px 24px 4px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 </style>
 {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-cream text-ink font-sans antialiased" x-data="{ offcanvasOpen: false, searchOpen: false }">
+<body class="bg-cream text-ink font-sans antialiased min-h-screen w-full max-w-full overflow-x-clip m-0 p-0" x-data="{ offcanvasOpen: false, searchOpen: false }">
 
 {% include "partials/offcanvas_sidebar.html" %}
 {% include "partials/navbar.html" %}
 
-
-
-<main class="w-full">
+<main class="w-full max-w-full">
   {% if messages %}
     <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-4 space-y-2">
       {% for message in messages %}

@@ -2,11 +2,34 @@
    ETERNAAURA — Core Luxury Stylesheet & Custom Utilities
    ========================================================================== */
 
-/* Custom Smooth Scrolling */
+/* Custom Smooth Scrolling & Root Layout Sizing */
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f4ec;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+}
+
+body {
+  background-color: #f8f4ec;
+  color: #0b0b0c;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+}
+
+/* Fluid Container Bounds */
+header, main, footer, section {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Custom Scrollbar for Luxury Aesthetics */
@@ -16,13 +39,13 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0b0c;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #8a6f28;
   border-radius: 9999px;
-  border: 2px solid #0b0b0c;
+  border: 2px solid #f8f4ec;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -65,4 +88,14 @@ html {
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Prevent horizontal scroll clipping for elevated cards without negative margin overflow */
+.swiper-luxury-padding {
+  padding: 12px 4px 24px 4px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }

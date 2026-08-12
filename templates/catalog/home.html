@@ -5,31 +5,31 @@
 {% block content %}
 
 <!-- HERO CAROUSEL -->
-<section x-data="{ slide: 0, slides: {{ banners|length|default:3 }} }" x-init="setInterval(() => slide = (slide + 1) % slides, 5000)" class="relative h-[56vh] sm:h-[80vh] min-h-[336px] sm:min-h-[520px] overflow-hidden bg-ink">
+<section x-data="{ slide: 0, slides: {{ banners|length|default:3 }} }" x-init="setInterval(() => slide = (slide + 1) % slides, 5000)" class="relative w-full max-w-full h-[52vh] sm:h-[80vh] min-h-[350px] sm:min-h-[520px] overflow-hidden bg-ink">
   {% for banner in banners %}
   <div x-show="slide === {{ forloop.counter0 }}" x-transition:enter="transition ease-out duration-700" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="absolute inset-0">
     {% if banner.image %}<img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="w-full h-full object-cover object-top opacity-70">{% endif %}
     <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent"></div>
     <div class="absolute inset-0 flex items-end sm:items-center">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pb-16 sm:py-8 w-full text-left">
-        <p class="font-accent text-gold-light text-base sm:text-xl tracking-widest mb-1.5 sm:mb-3">ETERNAAURA PRESENTS</p>
-        <h1 class="font-serif text-3xl sm:text-4xl md:text-6xl text-cream max-w-2xl leading-tight mb-2 sm:mb-6">{{ banner.title }}</h1>
-        <p class="text-cream/90 text-base sm:text-base max-w-xl line-clamp-3 sm:line-clamp-none">{{ banner.subtitle }}</p>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pb-14 sm:py-8 w-full text-left">
+        <p class="font-accent text-gold-light text-xs sm:text-xl tracking-[0.2em] mb-1 sm:mb-3 font-semibold">ETERNAAURA PRESENTS</p>
+        <h1 class="font-serif text-2xl sm:text-4xl md:text-6xl text-cream max-w-2xl leading-snug sm:leading-tight mb-2 sm:mb-6">{{ banner.title }}</h1>
+        <p class="text-cream/90 text-xs sm:text-base max-w-xl line-clamp-2 sm:line-clamp-none leading-relaxed">{{ banner.subtitle }}</p>
       </div>
     </div>
   </div>
   {% empty %}
-  <div class="absolute inset-0 flex items-end sm:items-center justify-start sm:justify-center pb-16 sm:pb-0">
+  <div class="absolute inset-0 flex items-end sm:items-center justify-start sm:justify-center pb-14 sm:pb-0">
     <div class="text-left sm:text-center max-w-2xl px-4 sm:px-6">
-      <p class="font-accent text-gold-light text-base sm:text-xl tracking-widest mb-1.5 sm:mb-3">ETERNAAURA</p>
-      <h1 class="font-serif text-3xl sm:text-5xl text-cream mb-2 sm:mb-6">Timeless Gold. Eternal Grace.</h1>
-      <p class="text-cream/80 text-base sm:text-base">Add HeroBanner entries in the admin dashboard to populate this carousel.</p>
+      <p class="font-accent text-gold-light text-xs sm:text-xl tracking-[0.2em] mb-1 sm:mb-3 font-semibold">ETERNAAURA</p>
+      <h1 class="font-serif text-2xl sm:text-5xl text-cream mb-2 sm:mb-6">Timeless Gold. Eternal Grace.</h1>
+      <p class="text-cream/80 text-xs sm:text-base">Add HeroBanner entries in the admin dashboard to populate this carousel.</p>
     </div>
   </div>
   {% endfor %}
 
   {% if banners %}
-  <div class="absolute bottom-3 sm:bottom-6 left-4 sm:left-1/2 sm:-translate-x-1/2 flex gap-2 z-10">
+  <div class="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
     {% for banner in banners %}
     <button @click="slide = {{ forloop.counter0 }}" :class="slide === {{ forloop.counter0 }} ? 'bg-gold w-8' : 'bg-cream/40 w-2'" class="h-2 rounded-full transition-all" aria-label="Go to slide {{ forloop.counter }}"></button>
     {% endfor %}
@@ -78,7 +78,7 @@
 </section>
 
 <!-- OUR STORY -->
-<section class="bg-ink text-cream py-16 sm:py-24">
+<section class="w-full max-w-full bg-ink text-cream py-16 sm:py-24">
   <div class="max-w-5xl mx-auto px-6 text-center">
     <p class="font-accent text-gold-light text-base sm:text-lg tracking-widest mb-2 sm:mb-3">OUR STORY</p>
     <h2 class="font-serif text-2xl sm:text-3xl md:text-4xl mb-4 sm:mb-6">Crafted for Legacy, Worn with Grace</h2>

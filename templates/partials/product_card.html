@@ -30,27 +30,27 @@
     </button>
   </form>
 
-  <div class="p-3 sm:p-4">
+  <div class="p-2.5 sm:p-4">
     <p class="font-accent text-[10px] sm:text-xs text-ink/50 uppercase tracking-wider mb-0.5 sm:mb-1">{{ product.category.name }}</p>
-    <a href="{{ product.get_absolute_url }}" class="font-serif text-sm sm:text-base text-ink hover:text-gold-dark line-clamp-1">{{ product.name }}</a>
+    <a href="{{ product.get_absolute_url }}" class="font-serif text-xs sm:text-base text-ink hover:text-gold-dark line-clamp-1 font-medium">{{ product.name }}</a>
 
     <div class="flex items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1 text-xs sm:text-sm">
       {{ product.average_rating|render_stars }}
       <span class="text-ink/40 text-[10px] sm:text-xs ml-0.5 sm:ml-1">({{ product.review_count }})</span>
     </div>
 
-    <div class="flex items-baseline gap-1.5 sm:gap-2 mt-1.5 sm:mt-2">
-      <span class="font-serif text-base sm:text-lg text-ink">₹{{ product.price }}</span>
+    <div class="flex items-baseline gap-1 sm:gap-2 mt-1 sm:mt-2">
+      <span class="font-serif text-sm sm:text-lg text-ink font-semibold">₹{{ product.price }}</span>
       {% if product.compare_at_price %}
-        <span class="text-xs sm:text-sm text-ink/40 line-through">₹{{ product.compare_at_price }}</span>
+        <span class="text-[10px] sm:text-sm text-ink/40 line-through">₹{{ product.compare_at_price }}</span>
       {% endif %}
     </div>
 
-    <div class="mt-2.5 sm:mt-3 flex gap-2">
+    <div class="mt-2 sm:mt-3 flex gap-2">
       <form action="{% url 'cart:add' product.id %}" method="post" class="flex-1">
         {% csrf_token %}
         <button type="submit" {% if not product.in_stock %}disabled{% endif %}
-          class="w-full text-xs sm:text-sm font-medium rounded-full py-1.5 sm:py-2 bg-ink text-cream hover:bg-gold hover:text-ink transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="w-full text-[11px] sm:text-sm font-medium rounded-full py-1.5 sm:py-2 bg-ink text-cream hover:bg-gold hover:text-ink transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           Add to Cart
         </button>
       </form>
