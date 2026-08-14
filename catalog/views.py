@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -5,7 +6,46 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
+from .context_processors import _fetch_nav_data
 from .models import Category, Collection, HeroBanner, Product, RecentlyViewed, Wishlist
+
+
+def _fetch_homepage_public_data():
+    banners = list(HeroBanner.objects.filter(is_active=True).order_by("display_order", "-created_at"))
+    new_arrivals = list(
+        Product.objects.filter(is_published=True, is_new_arrival=True)
+        .select_related("category")
+        .prefetch_related("images")[:8]
+    )
+    best_sellers = list(
+        Product.objects.filter(is_published=True, is_best_seller=True)
+        .select_related("category")
+        .prefetch_related("images")[:8]
+    )
+    trending = list(
+        Product.objects.filter(is_published=True, is_trending=True)
+        .select_related("category")
+        .prefetch_related("images")[:8]
+    )
+    active_collections = list(Collection.objects.filter(is_active=True))
+
+    bridal = next((c for c in active_collections if c.slug == "bridal-collection"), None)
+    if bridal is None and active_collections:
+        bridal = active_collections[0]
+
+    daily_wear = next((c for c in active_collections if c.slug == "daily-wear-collection"), None)
+    if daily_wear is None and len(active_collections) > 1:
+        daily_wear = active_collections[1]
+
+    return {
+        "banners": banners,
+        "new_arrivals": new_arrivals,
+        "best_sellers": best_sellers,
+        "trending": trending,
+        "collections": active_collections,
+        "bridal": bridal,
+        "daily_wear": daily_wear,
+    }
 
 
 class HomeView(TemplateView):
@@ -13,16 +53,12 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["banners"] = HeroBanner.objects.filter(is_active=True).order_by("display_order", "-created_at")
-        ctx["categories"] = Category.objects.filter(is_active=True, parent__isnull=True).order_by("display_order", "name")
-        ctx["new_arrivals"] = Product.objects.filter(is_published=True, is_new_arrival=True).select_related("category").prefetch_related("images")[:8]
-        ctx["best_sellers"] = Product.objects.filter(is_published=True, is_best_seller=True).select_related("category").prefetch_related("images")[:8]
-        ctx["trending"] = Product.objects.filter(is_published=True, is_trending=True).select_related("category").prefetch_related("images")[:8]
-        active_collections = list(Collection.objects.filter(is_active=True))
-        ctx["collections"] = active_collections
-        ctx["bridal"] = Collection.objects.filter(is_active=True, slug="bridal-collection").first() or (active_collections[0] if active_collections else None)
-        ctx["daily_wear"] = Collection.objects.filter(is_active=True, slug="daily-wear-collection").first() or (active_collections[1] if len(active_collections) > 1 else None)
+        public_data = cache.get_or_set("homepage_public_data", _fetch_homepage_public_data, timeout=300)
+        ctx.update(public_data)
+        nav_data = cache.get_or_set("nav_categories_data", _fetch_nav_data, timeout=300)
+        ctx["categories"] = nav_data.get("nav_categories", [])
         return ctx
+
 
 
 def apply_catalog_filtering_and_sorting(queryset, request):
