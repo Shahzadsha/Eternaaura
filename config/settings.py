@@ -188,9 +188,28 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 CLOUDINARY_URL = config("CLOUDINARY_URL", default=None) or os.environ.get("CLOUDINARY_URL")
 
 if CLOUDINARY_URL:
+    from urllib.parse import urlparse
+    parsed_cloud_url = urlparse(CLOUDINARY_URL)
+    cloud_name = parsed_cloud_url.hostname or ""
+    api_key = parsed_cloud_url.username or ""
+    api_secret = parsed_cloud_url.password or ""
+
     CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": cloud_name,
+        "API_KEY": api_key,
+        "API_SECRET": api_secret,
         "CLOUDINARY_URL": CLOUDINARY_URL,
     }
+
+    import cloudinary
+    cloudinary.config(
+        cloud_name=cloud_name,
+        api_key=api_key,
+        api_secret=api_secret,
+        secure=True,
+    )
+
+
     STORAGES = {
         "default": {
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -199,6 +218,7 @@ if CLOUDINARY_URL:
             "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
+
 else:
     MEDIA_URL = "/media/"
     STORAGES = {
