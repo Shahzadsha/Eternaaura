@@ -5,16 +5,17 @@
 {% block meta_description %}{{ product.meta_description|default:product.short_description }}{% endblock %}
 
 {% block content %}
+{% with product.variants.all|first as first_variant %}
 <div class="w-full max-w-7xl mx-auto px-4 md:px-8 py-6 sm:py-10"
      x-data="{
        activeImage: 0,
        totalImages: {{ product.images.all|length|default:1 }},
-       selectedVariant: {% if product.variants.first %}{{ product.variants.first.id }}{% else %}null{% endif %},
-       selectedColorName: '{% if product.variants.first %}{% for v in product.variants.first.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}{% else %}Default{% endif %}',
-       currentPrice: '{% if product.variants.first %}{{ product.variants.first.effective_price }}{% else %}{{ product.price }}{% endif %}',
-       currentSku: '{{ product.sku }}{% if product.variants.first and product.variants.first.sku_suffix %}-{{ product.variants.first.sku_suffix }}{% endif %}',
-       inStock: {% if product.variants.first %}{% if product.variants.first.stock_quantity > 0 %}true{% else %}false{% endif %}{% else %}{% if product.in_stock %}true{% else %}false{% endif %}{% endif %},
-       stockCount: {% if product.variants.first %}{{ product.variants.first.stock_quantity }}{% else %}{{ product.stock_quantity }}{% endif %},
+       selectedVariant: {% if first_variant %}{{ first_variant.id }}{% else %}null{% endif %},
+       selectedColorName: '{% if first_variant %}{% for v in first_variant.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}{% else %}Default{% endif %}',
+       currentPrice: '{% if first_variant %}{{ first_variant.effective_price }}{% else %}{{ product.price }}{% endif %}',
+       currentSku: '{{ product.sku }}{% if first_variant and first_variant.sku_suffix %}-{{ first_variant.sku_suffix }}{% endif %}',
+       inStock: {% if first_variant %}{% if first_variant.stock_quantity > 0 %}true{% else %}false{% endif %}{% else %}{% if product.in_stock %}true{% else %}false{% endif %}{% endif %},
+       stockCount: {% if first_variant %}{{ first_variant.stock_quantity }}{% else %}{{ product.stock_quantity }}{% endif %},
        qty: 1,
        tab: '{{ request.GET.tab|default:'description' }}',
        specsExpanded: false,
@@ -406,6 +407,7 @@
   {% endif %}
 
 </div>
+{% endwith %}
 {% endblock %}
 
 {% block extra_scripts %}

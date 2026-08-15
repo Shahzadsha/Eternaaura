@@ -195,7 +195,7 @@
 <section class="max-w-7xl mx-auto px-4 md:px-8 pb-16 sm:pb-20 grid grid-cols-1 md:grid-cols-2 gap-6">
   {% if bridal %}
   <a href="{{ bridal.get_absolute_url }}" class="relative rounded-3xl overflow-hidden aspect-[4/3] bg-ink group shadow-xl">
-    {% if bridal.banner_image %}<img src="{{ bridal.banner_image.url }}" alt="{{ bridal.name }}" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-500">{% endif %}
+    {% if bridal.banner_image %}<img src="{{ bridal.banner_image|optimized_image_url:800 }}" alt="{{ bridal.name }}" loading="lazy" decoding="async" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-500">{% endif %}
     <div class="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent">
       <p class="font-accent text-gold-light text-sm sm:text-base tracking-widest mb-1 sm:mb-2">CURATED SELECTION</p>
       <h3 class="font-serif text-xl sm:text-2xl md:text-3xl text-cream font-bold">{{ bridal.name }}</h3>
@@ -205,7 +205,7 @@
 
   {% if daily_wear %}
   <a href="{{ daily_wear.get_absolute_url }}" class="relative rounded-3xl overflow-hidden aspect-[4/3] bg-ink group shadow-xl">
-    {% if daily_wear.banner_image %}<img src="{{ daily_wear.banner_image.url }}" alt="{{ daily_wear.name }}" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-500">{% endif %}
+    {% if daily_wear.banner_image %}<img src="{{ daily_wear.banner_image|optimized_image_url:800 }}" alt="{{ daily_wear.name }}" loading="lazy" decoding="async" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-500">{% endif %}
     <div class="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent">
       <p class="font-accent text-gold-light text-sm sm:text-base tracking-widest mb-1 sm:mb-2">EVERYDAY ELEGANCE</p>
       <h3 class="font-serif text-xl sm:text-2xl md:text-3xl text-cream font-bold">{{ daily_wear.name }}</h3>

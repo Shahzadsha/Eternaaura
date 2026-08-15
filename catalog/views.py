@@ -135,12 +135,10 @@ def apply_catalog_filtering_and_sorting(queryset, request):
 
 
 def build_catalog_context(base_qs, request):
-    # Fetch available purities & gemstones from base_qs
-    purities_raw = list(base_qs.values_list("metal_purity", flat=True).distinct())
-    available_purities = [p for p in purities_raw if p]
-
-    gemstones_raw = list(base_qs.values_list("gemstone", flat=True).distinct())
-    available_gemstones = [g for g in gemstones_raw if g]
+    # Fetch available purities & gemstones from base_qs in a single combined query
+    pairs = list(base_qs.values_list("metal_purity", "gemstone").distinct())
+    available_purities = sorted(list({p for p, g in pairs if p}))
+    available_gemstones = sorted(list({g for p, g in pairs if g}))
 
     filtered_qs = apply_catalog_filtering_and_sorting(base_qs, request).select_related("category").prefetch_related("images")
 
@@ -236,8 +234,8 @@ class ProductDetailView(DetailView):
         related = Product.objects.filter(
             is_published=True, category=product.category
         ).exclude(pk=product.pk).select_related("category").prefetch_related("images").order_by("-is_best_seller", "-average_rating")[:8]
-        manual_related = product.manually_related_products.filter(is_published=True).select_related("category").prefetch_related("images")
-        ctx["related_products"] = manual_related if manual_related.exists() else related
+        manual_related = list(product.manually_related_products.filter(is_published=True).select_related("category").prefetch_related("images")[:8])
+        ctx["related_products"] = manual_related if manual_related else related
 
         # Fetch sibling color variant products matching exact name AND category
         ctx["color_variant_products"] = Product.objects.filter(
@@ -276,7 +274,9 @@ class ProductDetailView(DetailView):
             ctx["recently_viewed"] = RecentlyViewed.objects.filter(
                 user=self.request.user
             ).exclude(product=product).select_related("product__category").prefetch_related("product__images")[:8]
-            ctx["is_wishlisted"] = Wishlist.objects.filter(user=self.request.user, product=product).exists()
+            
+            wishlist_ids = ctx.get("user_wishlist_ids", set())
+            ctx["is_wishlisted"] = (product.id in wishlist_ids) or (str(product.id) in wishlist_ids)
         return ctx
 
 

@@ -4,6 +4,7 @@ from django.views import View
 
 from catalog.models import Product
 from dashboard.models import StoreSettings
+from .context_processors import clear_cart_cache
 from .models import Cart, CartItem
 
 
@@ -75,6 +76,7 @@ class AddToCartView(View):
         new_quantity = quantity if created else item.quantity + quantity
         item.quantity = min(new_quantity, product.stock_quantity) if product.stock_quantity else new_quantity
         item.save()
+        clear_cart_cache(request)
         return redirect("cart:detail")
 
 
@@ -93,6 +95,7 @@ class UpdateCartItemView(View):
             item.save()
         else:
             item.delete()
+        clear_cart_cache(request)
         return redirect("cart:detail")
 
 
@@ -101,4 +104,5 @@ class RemoveCartItemView(View):
         cart = _get_or_create_cart(request)
         item = get_object_or_404(CartItem, pk=item_id, cart=cart)
         item.delete()
+        clear_cart_cache(request)
         return redirect("cart:detail")

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static catalog_extras %}
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 md:px-8 py-12">
   <div class="flex items-center justify-between mb-8">
@@ -38,7 +38,7 @@
         <div class="flex items-center gap-4">
           <a href="{{ item.product.get_absolute_url }}" class="block w-16 h-16 rounded-xl bg-champagne overflow-hidden shrink-0 hover:opacity-90 transition-opacity">
             {% with img=item.product.images.first %}
-            {% if img %}<img src="{{ img.image.url }}" alt="{{ item.product_name_snapshot }}" class="w-full h-full object-cover">{% endif %}
+            {% if img %}<img src="{{ img.image|optimized_image_url:150 }}" alt="{{ item.product_name_snapshot }}" loading="lazy" decoding="async" class="w-full h-full object-cover">{% endif %}
             {% endwith %}
           </a>
           <div>

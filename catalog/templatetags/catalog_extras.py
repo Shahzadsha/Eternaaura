@@ -47,10 +47,11 @@ def optimized_image_url(image_field, width=None):
     if not url:
         return ""
 
-    if "res.cloudinary.com" in url or "cloudinary" in url:
+    if ("res.cloudinary.com" in url or "cloudinary" in url) and "/upload/" in url:
+        if "/upload/f_auto" in url or "/upload/q_auto" in url or "/upload/w_" in url:
+            return url
         transforms = "f_auto,q_auto"
         if width:
             transforms += f",w_{width},c_limit"
-        if "/upload/" in url:
-            return url.replace("/upload/", f"/upload/{transforms}/")
+        return url.replace("/upload/", f"/upload/{transforms}/")
     return url

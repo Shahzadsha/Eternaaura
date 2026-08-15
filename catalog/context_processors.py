@@ -8,18 +8,23 @@ def wishlist_summary(request):
     wishlist_count into template context on every request for authenticated users.
     User data is NEVER stored in shared cache.
     """
+    if hasattr(request, "_cached_wishlist_data"):
+        return request._cached_wishlist_data
     user = getattr(request, "user", None)
     if user and user.is_authenticated:
         raw_ids = list(Wishlist.objects.filter(user=user).values_list("product_id", flat=True))
         wishlisted_ids = set(raw_ids) | {str(pid) for pid in raw_ids}
-        return {
+        res = {
             "user_wishlist_ids": wishlisted_ids,
             "wishlist_count": len(raw_ids),
         }
-    return {
-        "user_wishlist_ids": set(),
-        "wishlist_count": 0,
-    }
+    else:
+        res = {
+            "user_wishlist_ids": set(),
+            "wishlist_count": 0,
+        }
+    request._cached_wishlist_data = res
+    return res
 
 
 def _fetch_nav_data():

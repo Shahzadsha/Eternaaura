@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static catalog_extras %}
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 md:px-8 py-8 sm:py-12">
   <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl mb-6 sm:mb-8">Checkout</h1>
@@ -81,7 +81,7 @@
           <div class="w-14 h-14 rounded-xl bg-champagne overflow-hidden shrink-0 border border-black/5">
             {% with img=item.product.images.first %}
             {% if img %}
-              <img src="{{ img.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+              <img src="{{ img.image|optimized_image_url:150 }}" alt="{{ item.product.name }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
             {% else %}
               <div class="w-full h-full flex items-center justify-center text-gold-dark/40 text-xs">✦</div>
             {% endif %}
