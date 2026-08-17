@@ -19,6 +19,10 @@
        qty: 1,
        tab: '{{ request.GET.tab|default:'description' }}',
        specsExpanded: false,
+       touchStartX: 0,
+       touchStartY: 0,
+       touchEndX: 0,
+       touchEndY: 0,
 
        selectColor(variantId, colorName, price, skuSuffix, stockQty, imgIdx) {
          this.selectedVariant = variantId;
@@ -33,13 +37,13 @@
        },
 
        nextImage() {
-         if (this.totalImages > 0) {
+         if (this.totalImages > 1) {
            this.activeImage = (this.activeImage + 1) % this.totalImages;
          }
        },
 
        prevImage() {
-         if (this.totalImages > 0) {
+         if (this.totalImages > 1) {
            this.activeImage = (this.activeImage - 1 + this.totalImages) % this.totalImages;
          }
        },
@@ -47,6 +51,34 @@
        setImage(idx) {
          if (idx >= 0 && idx < this.totalImages) {
            this.activeImage = idx;
+         }
+       },
+
+       handleTouchStart(e) {
+         if (e.touches && e.touches.length === 1) {
+           this.touchStartX = e.touches[0].clientX;
+           this.touchStartY = e.touches[0].clientY;
+         }
+       },
+
+       handleTouchEnd(e) {
+         if (e.changedTouches && e.changedTouches.length === 1) {
+           this.touchEndX = e.changedTouches[0].clientX;
+           this.touchEndY = e.changedTouches[0].clientY;
+           this.handleSwipe();
+         }
+       },
+
+       handleSwipe() {
+         const diffX = this.touchEndX - this.touchStartX;
+         const diffY = this.touchEndY - this.touchStartY;
+         const minDistance = 50;
+         if (Math.abs(diffX) >= minDistance && Math.abs(diffX) > Math.abs(diffY)) {
+           if (diffX < 0) {
+             this.nextImage();
+           } else {
+             this.prevImage();
+           }
          }
        }
      }">
@@ -62,19 +94,43 @@
 
     <!-- GALLERY CONTAINER (Flipkart Style) -->
     <div class="w-full max-w-full min-w-0">
-      <div class="relative rounded-2xl overflow-hidden bg-champagne aspect-square mb-2.5 sm:mb-3 w-full max-w-full sm:max-w-none mx-auto group shadow-sm border border-black/5" id="mainImageWrap">
+      <div class="relative rounded-2xl overflow-hidden bg-champagne aspect-square mb-2.5 sm:mb-3 w-full max-w-full sm:max-w-none mx-auto group shadow-sm border border-black/5 select-none"
+           id="mainImageWrap"
+           style="touch-action: pan-y;"
+           @touchstart.passive="handleTouchStart($event)"
+           @touchend.passive="handleTouchEnd($event)">
         {% for img in product.images.all %}
+        {% if img.image %}
         <img x-show="activeImage === {{ forloop.counter0 }}"
              x-transition:enter="transition ease-out duration-300 opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
-             src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}"
-             class="w-full h-full object-cover select-none">
+             src="{{ img.image|optimized_image_url:800 }}" alt="{{ img.alt_text|default:product.name }}"
+             class="w-full h-full object-cover select-none pointer-events-none">
+        {% else %}
+        <div x-show="activeImage === {{ forloop.counter0 }}" class="w-full h-full flex flex-col items-center justify-center bg-champagne text-gold-dark/40">
+          <span class="font-serif text-4xl">✦</span>
+          <span class="text-xs uppercase tracking-widest font-accent text-ink/40 mt-1">Eternaaura</span>
+        </div>
+        {% endif %}
         {% empty %}
         <div class="w-full h-full flex flex-col items-center justify-center bg-champagne text-gold-dark/40">
           <span class="font-serif text-4xl">✦</span>
           <span class="text-xs uppercase tracking-widest font-accent text-ink/40 mt-1">Eternaaura</span>
         </div>
         {% endfor %}
+
+        {% if product.images.all|length > 1 %}
+        <button type="button" @click="prevImage()"
+                class="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow hover:bg-gold hover:text-white items-center justify-center text-ink text-lg font-bold transition-colors cursor-pointer z-10"
+                aria-label="Previous image">
+          ‹
+        </button>
+        <button type="button" @click="nextImage()"
+                class="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow hover:bg-gold hover:text-white items-center justify-center text-ink text-lg font-bold transition-colors cursor-pointer z-10"
+                aria-label="Next image">
+          ›
+        </button>
+        {% endif %}
 
         {% if product.view_360 %}
         <button class="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 bg-ink/80 text-cream text-[10px] sm:text-xs px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full z-10">360° View</button>
@@ -103,8 +159,8 @@
              class="relative w-14 h-14 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 transition-all duration-200 cursor-pointer bg-champagne {% if p.pk == product.pk %}border-2 border-gold ring-2 ring-gold/30 shadow-md scale-105{% else %}border border-black/15 opacity-70 hover:opacity-100 hover:border-gold/50{% endif %}"
              title="{% if p.metal_purity %}{{ p.get_metal_purity_display }}{% elif p.gemstone %}{{ p.gemstone }}{% elif p.variants.first %}{% for v in p.variants.first.values.all %}{{ v.value }}{% if not forloop.last %} / {% endif %}{% endfor %}{% else %}{{ p.name }}{% endif %}">
 
-            {% if p.images.first %}
-              <img src="{{ p.images.first.image.url }}" alt="{{ p.name }}" class="w-full h-full object-cover">
+            {% if p.images.first and p.images.first.image %}
+              <img src="{{ p.images.first.image|optimized_image_url:200 }}" alt="{{ p.name }}" class="w-full h-full object-cover">
             {% else %}
               <div class="w-full h-full flex items-center justify-center bg-champagne text-gold-dark/40 text-xs">✦</div>
             {% endif %}
@@ -126,11 +182,13 @@
 
             {% for img in product.images.all %}
               {% if forloop.counter0 == v_index %}
-                <img src="{{ img.image.url }}" alt="{% for v in variant.values.all %}{{ v.value }}{% endfor %}" class="w-full h-full object-cover">
+                {% if img.image %}
+                  <img src="{{ img.image|optimized_image_url:200 }}" alt="{% for v in variant.values.all %}{{ v.value }}{% endfor %}" class="w-full h-full object-cover">
+                {% endif %}
               {% endif %}
             {% empty %}
-              {% if product.images.first %}
-                <img src="{{ product.images.first.image.url }}" alt="{% for v in variant.values.all %}{{ v.value }}{% endfor %}" class="w-full h-full object-cover">
+              {% if product.images.first and product.images.first.image %}
+                <img src="{{ product.images.first.image|optimized_image_url:200 }}" alt="{% for v in variant.values.all %}{{ v.value }}{% endfor %}" class="w-full h-full object-cover">
               {% endif %}
             {% endfor %}
           </button>
@@ -143,7 +201,27 @@
 
     <!-- INFO -->
     <div class="w-full min-w-0">
-      <p class="font-accent text-gold-dark tracking-widest text-xs sm:text-sm uppercase mb-1 sm:mb-2">{{ product.category.name }}</p>
+      <div class="flex items-center justify-between gap-2 mb-1 sm:mb-2 flex-wrap">
+        <p class="font-accent text-gold-dark tracking-widest text-xs sm:text-sm uppercase">{{ product.category.name }}</p>
+        <div class="flex flex-wrap gap-1.5 items-center">
+          {% if product.is_anti_tarnish %}
+            <span class="bg-amber-800/90 text-amber-100 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">Anti-Tarnish</span>
+          {% endif %}
+          {% if product.is_gift_pick %}
+            <span class="bg-rose-800/90 text-rose-100 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">Gift Pick</span>
+          {% endif %}
+          {% if product.is_best_seller %}
+            <span class="bg-gold-dark text-white text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">Best Seller</span>
+          {% elif product.is_new_arrival %}
+            <span class="bg-ink text-gold-light text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+          {% endif %}
+          {% if product.is_under_199 %}
+            <span class="bg-emerald-800 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">Under ₹199</span>
+          {% elif product.is_under_299 %}
+            <span class="bg-emerald-800 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">Under ₹299</span>
+          {% endif %}
+        </div>
+      </div>
       <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl mb-2 sm:mb-3 text-ink leading-tight break-words">{{ product.name }}</h1>
 
       <div class="flex items-center gap-2 mb-3 sm:mb-4">
@@ -232,10 +310,11 @@
         </form>
       </div>
 
-      <!-- Delivery / Return / Warranty -->
+      <!-- Delivery / Assurance -->
       <div class="border-t border-ink/10 pt-4 sm:pt-6 space-y-2 sm:space-y-3 text-xs sm:text-sm text-ink/70 w-full">
-        <p>🚚 Estimated delivery: <strong>3–7 business days</strong></p>
-        <p>🛡 Lifetime authenticity warranty on all metals &amp; gemstones</p>
+        <p>🚚 Estimated delivery: <strong>3–7 business days</strong> across India</p>
+        <p>✨ Skin-safe, premium finish &amp; anti-tarnish everyday protection</p>
+        <p>🎁 Gift-ready luxury packaging available with every order</p>
       </div>
     </div>
   </div>

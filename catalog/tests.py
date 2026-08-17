@@ -221,3 +221,145 @@ class HomeViewPerformanceTests(TestCase):
         self.assertEqual(res_anon.context["cart_item_count"], 0)
 
 
+class ProductBrandRepositioningPropertiesTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Earrings", slug="earrings")
+        self.gift_category = Category.objects.create(name="Gift Sets & Hampers", slug="gift-sets-hampers")
+        self.collection = Collection.objects.create(name="Gifting & Festive Hampers", slug="gifting-festive-hampers")
+
+    def test_is_anti_tarnish_property(self):
+        # 1. Explicit affirmative values
+        p1 = Product(specifications={"Anti-Tarnish": "Yes"})
+        self.assertTrue(p1.is_anti_tarnish)
+
+        p2 = Product(specifications={"anti_tarnish": "true"})
+        self.assertTrue(p2.is_anti_tarnish)
+
+        p3 = Product(specifications={"Anti Tarnish": "1"})
+        self.assertTrue(p3.is_anti_tarnish)
+
+        # 2. Negative or missing values
+        p4 = Product(specifications={"Anti-Tarnish": "No"})
+        self.assertFalse(p4.is_anti_tarnish)
+
+        p5 = Product(specifications={})
+        self.assertFalse(p5.is_anti_tarnish)
+
+        p6 = Product(specifications=None)
+        self.assertFalse(p6.is_anti_tarnish)
+
+    def test_price_tier_properties(self):
+        p1 = Product(price=Decimal("149.00"))
+        self.assertTrue(p1.is_under_199)
+        self.assertTrue(p1.is_under_299)
+
+        p2 = Product(price=Decimal("199.00"))
+        self.assertTrue(p2.is_under_199)
+        self.assertTrue(p2.is_under_299)
+
+        p3 = Product(price=Decimal("249.00"))
+        self.assertFalse(p3.is_under_199)
+        self.assertTrue(p3.is_under_299)
+
+        p4 = Product(price=Decimal("299.00"))
+        self.assertFalse(p4.is_under_199)
+        self.assertTrue(p4.is_under_299)
+
+        p5 = Product(price=Decimal("349.00"))
+        self.assertFalse(p5.is_under_199)
+        self.assertFalse(p5.is_under_299)
+
+    def test_is_gift_pick_property(self):
+        # 1. By specifications
+        p1 = Product(specifications={"Gift Pick": "Yes"})
+        self.assertTrue(p1.is_gift_pick)
+
+        p2 = Product(specifications={"Occasion": "Festive Gift Hamper"})
+        self.assertTrue(p2.is_gift_pick)
+
+        # 2. By category (in-memory)
+        p3 = Product(category=self.gift_category)
+        self.assertTrue(p3.is_gift_pick)
+
+        # 3. Standard piece
+        p4 = Product(category=self.category, specifications={"Material": "Brass"})
+        self.assertFalse(p4.is_gift_pick)
+
+    def test_is_anti_tarnish_never_infers_from_other_fields(self):
+        # Even if product name, description, or category has "Anti-Tarnish", property must NOT infer it
+        p = Product.objects.create(
+            category=self.category,
+            name="Anti-Tarnish Golden Ring",
+            slug="anti-tarnish-golden-ring",
+            sku="AT-RNG-01",
+            price=Decimal("199.00"),
+            description="Our best waterproof anti-tarnish daily wear ring.",
+            specifications={},  # No explicit anti-tarnish spec
+        )
+        self.assertFalse(p.is_anti_tarnish)
+
+    def test_is_gift_pick_performs_zero_queries_when_unfetched(self):
+        p = Product.objects.create(
+            category=self.category,
+            name="Standard Daily Ring",
+            slug="standard-daily-ring",
+            sku="SDR-01",
+            price=Decimal("199.00"),
+            specifications={},
+        )
+        # Fetch from DB without select_related / prefetch_related
+        raw_product = Product.objects.only("id", "name", "price", "specifications").get(id=p.id)
+
+        # Accessing is_gift_pick must emit strictly ZERO database queries
+        with self.assertNumQueries(0):
+            result = raw_product.is_gift_pick
+            self.assertFalse(result)
+
+    def test_is_gift_pick_with_prefetched_collections(self):
+        p = Product.objects.create(
+            category=self.category,
+            name="Festive Gift Box",
+            slug="festive-gift-box",
+            sku="FGB-01",
+            price=Decimal("499.00"),
+            specifications={},
+        )
+        self.collection.products.add(p)
+
+        # Fetch with prefetch_related
+        prefetched_product = Product.objects.prefetch_related("collections").get(id=p.id)
+
+        # Must evaluate to True using _prefetched_objects_cache without extra queries
+        with self.assertNumQueries(0):
+            self.assertTrue(prefetched_product.is_gift_pick)
+
+    def test_badge_rendering_and_zero_n_plus_one_queries(self):
+        # Create 10 test products
+        for i in range(10):
+            p = Product.objects.create(
+                category=self.category,
+                name=f"Trendy Hoop #{i}",
+                slug=f"trendy-hoop-{i}",
+                sku=f"THP-00{i}",
+                price=Decimal("149.00" if i % 2 == 0 else "249.00"),
+                stock_quantity=10,
+                is_published=True,
+                is_new_arrival=True,
+                is_best_seller=(i % 2 == 0),
+                specifications={"Anti-Tarnish": "Yes"} if i % 2 == 0 else {},
+            )
+            ProductImage.objects.create(product=p, display_order=1)
+
+        # Ensure Category page renders and contains badges
+        res_cat = self.client.get(reverse("catalog:category_detail", kwargs={"slug": self.category.slug}))
+        self.assertEqual(res_cat.status_code, 200)
+        self.assertContains(res_cat, "Anti-Tarnish")
+        self.assertContains(res_cat, "Under ₹199")
+
+        # Ensure New Arrivals page renders
+        res_new = self.client.get(reverse("catalog:new_arrivals"))
+        self.assertEqual(res_new.status_code, 200)
+        self.assertContains(res_new, "Trendy Hoop #0")
+
+
+

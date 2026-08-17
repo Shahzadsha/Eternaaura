@@ -384,7 +384,7 @@ class NewArrivalsView(BaseShowcaseView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["page_title"] = "New Arrivals"
-        ctx["page_subtitle"] = "Be the first to discover our latest fine jewellery creations, handcrafted by master artisans."
+        ctx["page_subtitle"] = "Be the first to discover our latest affordable fashion jewellery, anti-tarnish everyday essentials & gift hampers."
         ctx["breadcrumb_title"] = "New Arrivals"
         return ctx
 
@@ -397,7 +397,7 @@ class BestSellersView(BaseShowcaseView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["page_title"] = "Best Sellers"
-        ctx["page_subtitle"] = "Our most cherished and iconic pieces, loved by connoisseurs of fine gold and diamonds."
+        ctx["page_subtitle"] = "Our most cherished and trending fashion jewellery, loved for daily style and effortless elegance."
         ctx["breadcrumb_title"] = "Best Sellers"
         return ctx
 
@@ -410,6 +410,6 @@ class TrendingCollectionsView(BaseShowcaseView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["page_title"] = "Trending Collections"
-        ctx["page_subtitle"] = "Explore today's most sought-after designs and seasonal high-jewellery highlights."
+        ctx["page_subtitle"] = "Explore today's most sought-after anti-tarnish jewellery, viral designs & curated gift boxes."
         ctx["breadcrumb_title"] = "Trending Collections"
         return ctx

@@ -24,15 +24,17 @@
       </div>
 
       <!-- Desktop nav -->
-      <nav class="hidden lg:flex items-center gap-8 font-accent text-lg text-cream/90">
+      <nav class="hidden lg:flex items-center gap-7 font-accent text-lg text-cream/90">
+        <a href="{% url 'catalog:category_detail' slug='earrings' %}"
+          class="hover:text-gold-light transition-colors">Earrings</a>
         <a href="{% url 'catalog:category_detail' slug='necklaces' %}"
           class="hover:text-gold-light transition-colors">Necklaces</a>
         <a href="{% url 'catalog:category_detail' slug='rings' %}"
           class="hover:text-gold-light transition-colors">Rings</a>
-        <a href="{% url 'catalog:category_detail' slug='earrings' %}"
-          class="hover:text-gold-light transition-colors">Earrings</a>
-        <a href="{% url 'catalog:collection_detail' slug='bridal-collection' %}"
-          class="hover:text-gold-light transition-colors">Bridal</a>
+        <a href="{% url 'catalog:new_arrivals' %}"
+          class="hover:text-gold-light transition-colors">New In</a>
+        <a href="{% url 'catalog:best_sellers' %}"
+          class="hover:text-gold-light transition-colors">Best Sellers</a>
         <a href="{% url 'coupons:list' %}" class="hover:text-gold-light transition-colors">Offers</a>
       </nav>
 
@@ -96,7 +98,7 @@
     <!-- Search bar (toggle overlay) -->
     <div x-show="searchOpen" x-transition class="pb-4" style="display:none">
       <form action="{% url 'catalog:search' %}" method="get" class="flex items-center shadow-lg">
-        <input type="text" name="q" placeholder="Search necklaces, rings, earrings…"
+        <input type="text" name="q" placeholder="Search earrings, necklaces, rings, hampers…"
           class="w-full rounded-l-full px-4 sm:px-5 py-2.5 bg-cream text-ink text-sm focus:outline-none">
         <button type="submit"
           class="rounded-r-full px-4 sm:px-6 py-2.5 bg-gold text-ink font-medium text-sm hover:bg-gold-light transition-colors shrink-0">Search</button>

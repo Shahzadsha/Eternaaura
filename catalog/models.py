@@ -195,6 +195,68 @@ class Product(TimeStamped):
     def is_low_stock(self):
         return 0 < self.stock_quantity <= self.low_stock_threshold
 
+    @property
+    def is_anti_tarnish(self):
+        """
+        Returns True strictly if product specifications explicitly indicate anti-tarnish qualities.
+        Never guesses or fabricates claims.
+        """
+        if not self.specifications or not isinstance(self.specifications, dict):
+            return False
+        for k, v in self.specifications.items():
+            clean_k = str(k).strip().lower().replace("-", " ").replace("_", " ")
+            if clean_k in ("anti tarnish", "antitarnish"):
+                return str(v).strip().lower() in ("yes", "true", "1", "y")
+        return False
+
+    @property
+    def is_under_199(self):
+        if self.price is not None:
+            from decimal import Decimal
+            return self.price <= Decimal("199.00")
+        return False
+
+    @property
+    def is_under_299(self):
+        if self.price is not None:
+            from decimal import Decimal
+            return self.price <= Decimal("299.00")
+        return False
+
+    @property
+    def is_gift_pick(self):
+        """
+        Strict in-memory evaluation for gift picks. Never emits database queries.
+        """
+        if self.specifications and isinstance(self.specifications, dict):
+            for k, v in self.specifications.items():
+                clean_k = str(k).strip().lower()
+                clean_v = str(v).strip().lower()
+                if "gift" in clean_k or "gift" in clean_v or "hamper" in clean_k or "hamper" in clean_v:
+                    return True
+
+        # Check loaded/cached category instance in memory
+        cat = None
+        if hasattr(self, "_state") and hasattr(self._state, "fields_cache") and "category" in self._state.fields_cache:
+            cat = self._state.fields_cache["category"]
+        elif "category" in self.__dict__:
+            cat = self.__dict__["category"]
+
+        if cat and hasattr(cat, "name"):
+            cat_name = str(cat.name).lower()
+            if "gift" in cat_name or "hamper" in cat_name or "box" in cat_name:
+                return True
+
+        prefetched = getattr(self, "_prefetched_objects_cache", {})
+        if "collections" in prefetched:
+            for col in prefetched["collections"]:
+                col_slug = getattr(col, "slug", "").lower()
+                col_name = getattr(col, "name", "").lower()
+                if "gift" in col_slug or "gift" in col_name or "hamper" in col_slug or "hamper" in col_name:
+                    return True
+
+        return False
+
     def __str__(self):
         return self.name
 
